@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+{% if not user %}
+  
+	<div class="w3-center w3-padding">
+		<h2>PLEASE, LOG IN </h2>
+		<p class="w3-large">To find the best music for you and you friends, the Friendship Saver App needs to load the tracks you like.</p>
+	</div>
+	
+	<div class="w3-center w3-padding">
+		<a href= "/auth"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">OK</button></a>
+	</div>
+	
+	<div class="w3-center w3-padding">
+		<a href= "/intro"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Cancel</button></a>
+	</div>
+
+{% else %}
+
+  
+  
+<div class="w3-padding">
+	<h2>Database </h2>
+	<p class="w3-small">{{ databaseRender }}.</p>
+</div>
+
+	
+	<div class="w3-center w3-padding">
+		<a href= "/intro"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Restart</button></a>
+	</div>
+
+{% endif %}
+
+{% endblock %}

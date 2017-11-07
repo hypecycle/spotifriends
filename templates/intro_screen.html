@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="w3-center w3-padding">
+  <h2 class="w3-animate-bottom">SPOTIFY FRIENDSHIP SAVER APP</h2>
+  <p class="w3-large">Music is not for fighting. Music is for sharing! Connect your Spotify with the Friendship saver app and find the music, you and all of your friends will love.</p>
+</div>
+<br>
+
+<div class="w3-center w3-padding">
+	<p class="w3-large">You have been invited to</p>
+	<div class="w3-container w3-black">
+  		<div class="w3-bar">
+  			<h4>{{ friendListRender }}</h4>
+  		</div>
+  	</div>
+  <p class="w3-large">"{{friendListDescrRender}}"</p>
+</div>
+<br>
+
+<div class="w3-center w3-padding">
+	<a href= "/loading"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Join list</button></a>
+</div>
+
+<div class="w3-center w3-padding">
+	<button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey w3-disabled" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Create new list</button>
+</div>
+
+
+{% endblock %}
