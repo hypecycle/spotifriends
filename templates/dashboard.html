@@ -19,16 +19,68 @@
 
 {% else %}
 
+
   
   
-<div class="w3-padding">
-	<h2>Database </h2>
-	<p class="w3-small">{{ databaseRender }}.</p>
+<div class="w3-responsive w3-padding">
+<table class="w3-table">
+<tbody>
+<tr>
+  <td width="120">
+  	<img src="{{ userimage }}" alt="{{ username }}" style="width:80%">
+  </td>
+  <td>   
+  	<h3>Welcome <br> {{ username }}</h3>  
+
+</td>
+</tr>
+</tbody>
+</table>
 </div>
+
+<hr>
+
+
+<div class="w3-responsive w3-padding">
+<table class="w3-table">
+<tbody>
+	<tr>
+	  <td width="120">
+	  </td>
+	  <td>    
+	  	  	Number of users
+		</td>
+	</tr>
+	<tr>
+	  <td width="120">
+	  </td>
+	  <td>    
+	  	  	number of friendlists
+		</td>
+	</tr>
+	<tr>
+	  <td width="120">
+	  </td>
+	  <td>    
+	  	  	{{dictcheck}}
+		</td>
+	</tr>
+	<tr>
+	  <td width="120">
+	  </td>
+	  <td>    
+	  	  	Getting playlists
+	 </td>
+	</tr>
+</tbody>
+</table>
+</div>
+ 
+<hr>
 
 	
 	<div class="w3-center w3-padding">
-		<a href= "/intro"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Restart</button></a>
+		<a href= "/intro"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Cancel</button></a>
 	</div>
 
 {% endif %}
