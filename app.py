@@ -109,50 +109,40 @@ def profile2():
     
 @app.route('/intro')
 def intro_screen():
-    return render_template('intro_screen.html', 
-    						friendListRender = friendList,
-    						friendListDescrRender = friendListDescr)
+    return render_template('intro.html')
+    
     						
-@app.route('/loading')
+@app.route('/dash')
 def loading_screen():
     if 'auth_header' in session:
         auth_header = session['auth_header']
                
         # get profile data
-        profile_data = spotify.get_users_profile(auth_header)
-        
-        # get top tracks
-        track_data = spotify.get_users_top(auth_header, 'tracks', 3)
-        
-        #database = responseparser.init_database(auth_header,friendList, friendListDescr)
-        #database = "Foo"
+        profile_data = spotify.get_users_profile(auth_header)        
 
         if valid_token(profile_data): 
-            return render_template("loading_screen.html",
-            					friendListHeaderRender = friendList,
-                                user=profile_data,
-                                tracks = track_data)
-
-    return render_template('loading_screen.html')
-    
-
-@app.route('/dash')
-def dashboard_screen():
-    if 'auth_header' in session:
-        auth_header = session['auth_header']
-               
-        # get profile data
-        profile_data = spotify.get_users_profile(auth_header)
-        
-        #database = responseparser.init_database(auth_header,friendList, friendListDescr)
-        #database = "Foo"
-
-        if valid_token(profile_data): 
+        	
+        	#Requests all data from spotify and forms a dict
+            database_current_user = responseparser.get_user_data(auth_header, profile_data)
+            
+            #Loads existing db, builds db, adds user or replaces user 
+            database_user = responseparser.update_main_user_db(database_current_user)
+            
+            #display ANY name, even for user which names are not set 1. Display name, 2. Given name, 3. UID
+            parsed_name_current_user = responseparser.parse_name(database_current_user)
+            
+            parsed_image_current_user = responseparser.parse_image(database_current_user)
+            
             return render_template("dashboard.html",
-            					friendListHeaderRender = friendList,
-                                databaseRender = database)
+            					user = profile_data,
+            					userlist = responseparser.parse_user_list_dashboard(database_user),
+                                userimage = parsed_image_current_user,
+                                username = parsed_name_current_user,
+                                dictcheck = database_user)
 
     return render_template('dashboard.html')
+    
+
     
 
     

@@ -2,15 +2,14 @@ import string
 #import random
 from spotify_requests import spotify
 import logging
+import datetime
+import pickle
 
 logging.basicConfig(
     filename="spotifriends.log",
     level=logging.INFO,
     format="%(asctime)s:%(levelname)s:%(message)s"
     )
-
-#Blueprint dict constructor
-#{'FRIENDLISTKEYWORD': {'SPOTIFYUID': {'displayname': 'DISPLAYNAME', 'password': 'NONE', 'token': '16DIGITRANDOMPWD' 'exturl': 'EXTERNPROFILEURL', 'imageurl': 'IMAGEURL', tracks': [{'trackname': 'TRACKNAME', 'trackid': 'TRACKID, 'trackurl': 'TRACKEXTERNALURL', 'trackartist': 'TRACKARTIST', 'trackalbum': 'TRACKNAME', 'trackpopularity': 'TRACKNAME'}, {...}]}, 'lovely': {'displayname': 'Maria Garcia', 'url': 'http://www.mg.es', 'tracks': [{'name': '3', 'id' : 'm'}, {'name': 'e', 'id': 'b'}]}}}
 
 
 def parse_users_profile(pdata):
@@ -21,13 +20,29 @@ def parse_users_profile(pdata):
 	uid = pdata.get('id')	
 	#ACHTUNG: bei leeren Images gibt es probleme. Auskommentiert: alter Version
 	#parsed.update({uid: {'display_name': pdata.get('display_name'), 'password': None, 'exturl': pdata.get('external_urls', {}).get('spotify'), 'token': generate_pwd(), 'imageurl': pdata.get('images', {})[0].get('url') }})
-	parsed.update({'display_name': pdata.get('display_name'), 'password': None, 'exturl': pdata.get('external_urls', {}).get('spotify'), 'token': None})	
+	
+	parsed.update({'display_name': pdata.get('display_name'), 'password': None, 'givenname': None, 'exturl': pdata.get('external_urls', {}).get('spotify')})	
 	
 	#Avoid error if picture url is empty
 	if not pdata.get('images'):
 		parsed.update({'imageurl': '/static/imgs/placeholder.jpg'})
 	else:
 		parsed.update({'imageurl': pdata.get('images', {})[0].get('url')})
+		
+	#Fill empty name with useful Info
+	#1. display_name, 2. given_name, 3. uid
+	cumulated_temp = uid
+	
+	if pdata.get('given_name'):
+		cumulated_temp = pdata.get('given_name')
+	elif pdata.get('display_name'):
+		cumulated_temp = pdata.get('display_name')
+		
+	parsed.update({'cumulated_name': cumulated_temp})	
+		
+	#add Lat login timestamp
+	lastLogin = ('{:%Y%m%d%H%M%S}'.format(datetime.datetime.now()))
+	parsed.update({'login': lastLogin})
 	
 	return parsed, uid
 
@@ -46,20 +61,6 @@ def parse_users_top(tracklist):
 	
 	return parsed
 	
-#unused	
-"""def complete_track_info(tracklist):
-	
-	for rows in tracklist['tracks']:
-		track_features = spotify.get_track(rows.get('track-id'))
-	
-	return track_features
-
-#unused	
-def parse_track_features(track_features, track_artist_features):
-	parsed = {}	
-	parsed.update({'danceability': track_features.get('danceability'), 'energy': track_features.get('energy'), 'loudness': track_features.get('loudness'), 'speechiness': track_features.get('speechiness'), 'acousticness': track_features.get('acousticness'), 'instrumentalness': track_features.get('instrumentalness'), 'liveness': track_features.get('liveness'), 'valence': track_features.get('valence'), 'tempo': track_features.get('tempo')})	
-	return parsed"""
-	
 
 #merges and returns parsed list 
 def merge_several_tracks_artists(track_list, artist_list, top_track_list):
@@ -76,7 +77,7 @@ def merge_several_tracks_artists(track_list, artist_list, top_track_list):
 			condensed_track_list.update(artist_list[i])
 			merged.append(condensed_track_list)
 	else:
-		merged = ('Error: len track list: {}, len artist list: {}'.format(len(track_list), len(artist_list)))
+		merged = [] # inconsistent cases return an empty database
         
 	return merged
 	
@@ -84,11 +85,16 @@ def merge_several_tracks_artists(track_list, artist_list, top_track_list):
 def get_artist_list_slow(auth_header, top_track_dict):
 
 	"""expects the auth header and a dict with track infos (looks for key 'artistid'. Returns a list with genres: [list of genres]"""
+
+	logging.info('Starting to get artist features')
 	
 	track_artist_features = []
 	for track_to_complete in top_track_dict:
 		track_artist_response = spotify.track_artist_features(auth_header, track_to_complete.get('artistid'))
 		track_artist_features.append({'artistid': track_to_complete.get('artistid'), 'genres': track_artist_response.get('genres')})
+		
+	logging.info('Getting artist features finished')
+
 	return track_artist_features
 
 	
@@ -105,9 +111,9 @@ def build_track_list(top_track_dict):
 	return track_list
 
 #initiates database with new friendlists	
-def build_database(friendlist_name, friendListDescr, uid, profile_dict, tracks_n_artists):
+def format_uid_entry(uid, profile_dict, tracks_n_artists):
 
-	"""inititates the database. expects the Name of the friendlist [str], a description of the friend list [str], the uid [str], the profile data [str] and artists and tracks [tracks] """
+	"""inititates the database old style with friendlist as key. expects the Name of the friendlist [str], a description of the friend list [str], the uid [str], the profile data [str] and artists and tracks [tracks] """
 	
 	database = []
 	entry = {}
@@ -118,24 +124,21 @@ def build_database(friendlist_name, friendListDescr, uid, profile_dict, tracks_n
 	#key und value angebammelt. Is doch ganz einfach
 	profile_dict['tracks'] = tracks_n_artists 
 
-	entry[friendlist_name] = {}
-	entry[friendlist_name]['description'] = friendListDescr
-	entry[friendlist_name][uid] ={}
-	entry[friendlist_name][uid].update(profile_dict)
+	entry[uid] ={}
+	entry[uid].update(profile_dict)
 	
 	database.append(entry)
 	
 	return database
 	
 	
-def init_database(auth_header, friendList, friendListDescr):
+def get_user_data(auth_header, profile_data):
 	"""Does the heavy lifting. Expects the auth header, the friend list name, description. Calls all requests and parsers
 	"""
-	profile_data = spotify.get_users_profile(auth_header)
-	profile_dict, uid = parse_users_profile(profile_data)
+	profile_dict, uid = parse_users_profile(profile_data) # returns dict with display name etc.
 	logging.info("Profile data retrieved for {}".format(uid))
 
-	user_top_tracks = spotify.get_users_top(auth_header, "tracks", 50)  
+	user_top_tracks = spotify.get_users_top(auth_header, "tracks", 50) # get user's top tracks.
 	top_track_dict = parse_users_top(user_top_tracks)
 	logging.info("{} Top tracks retrieved and parsed".format(len(user_top_tracks)))
 	
@@ -147,11 +150,95 @@ def init_database(auth_header, friendList, friendListDescr):
 
 	
 	merged_tracklist = merge_several_tracks_artists(several_track_features.get('audio_features'), track_artist_features, top_track_dict)
-	database = build_database(friendList, friendListDescr, uid, profile_dict, merged_tracklist)
+	database = format_uid_entry(uid, profile_dict, merged_tracklist)
 
 
 	return database
 
+def load_database(fileName):
+
+	""" Loads databases from data-folder, returns unpickled list """
+	
+	try:
+		with open('data/' + fileName+'.pickle', 'rb') as handle:
+			data = pickle.load(handle)
+	except:
+		logging.info("Loading failed")
+		data = []
+	return data
+	
+	
+def save_database(fileName, database):
+
+	""" Writes databases as pickled file """
+	
+	try:
+		with open('data/' + fileName+'.pickle', 'wb') as handle:
+			pickle.dump(database, handle, protocol=pickle.HIGHEST_PROTOCOL)
+	except:
+		logging.info("Saving failed")
+	return 
 
 
+def update_main_user_db(database_current_user):
 
+	""" Loads database 'database_user'. Does all the magic. If database_user is empty or uid not present: 
+	appends database_current_user. If user present: Updates info in database. Two methods in test_dict9 on MacBook"""
+
+	database_user_before = load_database('database_user') #loads database up to now. Passes to var
+	
+	database_user_new = [] #basis for building new database. Adding existing item or current user item 
+	change_flag = False #Gets toggled, when the user-uid was found and current iuser added. 
+						#Remains false, when key not found due to empty database or new user
+	
+	for i in database_user_before:
+		if next (iter (i)) == next (iter (database_current_user[0])): #iteration uid equals current user uid
+			database_user_new.append(database_current_user[0])          #add current user at the place of the old info
+			change_flag = True							 #changed!
+			logging.info("Found user {}".format(next (iter (database_current_user[0]))))
+		else:
+			database_user_new.append(i) #iteration uid not user? add old item
+			logging.info("User {} (before) and user {} (current) don't match".format(next(iter(i)), next (iter (database_current_user[0]))))
+
+	
+	#if the search term hasn't been found, add user at the end   
+	if not change_flag:
+		database_user_new.append(database_current_user[0])
+		#logging.info("User {} not found updating user db. Appended".format(next (iter (database_current_user[0]))))
+		
+	save_database('database_user', database_user_new)
+	
+	return database_user_new
+	
+
+def parse_name(current_user):
+	"""Parse current user to return the name. 1. display_name, 2. given_name, 3. uid"""
+	
+	user_data = current_user[0].get(next(iter(current_user[0]))).get('cumulated_name')
+	
+	return user_data #return UID
+	
+	
+def parse_image(current_user):
+	"""Parse current users dataset to return image_url. Alternative URL for users with no image has been constructed earlier in parse_users_profile"""
+	
+	user_data = current_user[0].get(next(iter(current_user[0])))
+	
+	return user_data.get('imageurl')
+	
+def parse_user_list_dashboard(user_database):
+	"""parse and return a list of strings with users and data"""
+
+	user_list = []
+	
+	for i in user_database:
+		#user_list.append('Name: '+ i.get('cumulated_name')+ 'Letzter Login:' + i.get('login'))
+		#user_list.append("Name: {}, last login: {}".format(i.get('cumulated_name'), i.get('login')))
+		#user_list.append(user_database[0].get(iter(next(i))))
+		#user_list.append(next(iter(i)))
+		user_list.append("Name: {}, last login: {}".format(i.get(next(iter(i))).get('cumulated_name'), i.get(next(iter(i))).get('login')))
+
+	
+	return user_list
+		
+	

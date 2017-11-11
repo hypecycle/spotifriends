@@ -48,7 +48,11 @@
 	  <td width="120">
 	  </td>
 	  <td>    
-	  	  	Number of users
+	  	  	<h3>Users:</h3><br>
+	  	  	{% for play in userlist %}
+	  	  	{{play}}<br>
+	  	  	 {% endfor %}
+
 		</td>
 	</tr>
 	<tr>
@@ -62,6 +66,7 @@
 	  <td width="120">
 	  </td>
 	  <td>    
+	  	  	<h3>Database:</h3><br>
 	  	  	{{dictcheck}}
 		</td>
 	</tr>
