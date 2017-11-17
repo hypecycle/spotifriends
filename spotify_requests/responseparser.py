@@ -153,7 +153,7 @@ def get_user_data(auth_header, profile_data):
 	database = format_uid_entry(uid, profile_dict, merged_tracklist)
 
 
-	return database
+	return database, uid
 
 def load_database(fileName):
 
@@ -227,15 +227,11 @@ def parse_image(current_user):
 	return user_data.get('imageurl')
 	
 def parse_user_list_dashboard(user_database):
-	"""parse and return a list of strings with users and data"""
+	"""parse and return a list of strings with users and data ready for dashboard"""
 
 	user_list = []
 	
 	for i in user_database:
-		#user_list.append('Name: '+ i.get('cumulated_name')+ 'Letzter Login:' + i.get('login'))
-		#user_list.append("Name: {}, last login: {}".format(i.get('cumulated_name'), i.get('login')))
-		#user_list.append(user_database[0].get(iter(next(i))))
-		#user_list.append(next(iter(i)))
 		user_list.append("Name: {}, last login: {}".format(i.get(next(iter(i))).get('cumulated_name'), i.get(next(iter(i))).get('login')))
 
 	

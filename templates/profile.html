@@ -3,95 +3,132 @@
 {% block content %}
 
 {% if not user %}
-
-  <div class="container">
-    <div class="mt-1">
-      <h1>Profile</h1>
-    </div>
-    <p class="lead">You need to log in to see this page</p>
-
-    <a type="button" class="btn btn-default" href="/auth">Login</a>
-  </div>
+  
+	<div class="w3-center w3-padding">
+		<h2>PLEASE, LOG IN </h2>
+		<p class="w3-large">To find the best music for you and you friends, the Friendship Saver App needs to load the tracks you like.</p>
+	</div>
+	
+	<div class="w3-center w3-padding">
+		<a href= "/auth"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">OK</button></a>
+	</div>
+	
+	<div class="w3-center w3-padding">
+		<a href= "/intro"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Cancel</button></a>
+	</div>
 
 {% else %}
 
-	<div class="container">
+
+  
+  
+<div class="w3-responsive w3-padding">
+<table class="w3-table">
+<tbody>
+<tr>
+  <td width="120">
+  	<img src="{{ userimage }}" alt="{{ username }}" style="width:80%">
+  </td>
+  <td>   
+  	<h3>Welcome <br> {{ username }}</h3>  
+
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<hr>
 
 
-	  <h1> Hi {{ user.display_name }} :) </h1>
+<div class="w3-responsive w3-padding">
 
-    <hr class="half-rule"/>
 
-	  <div class="row">
-      <div class="col-sm-4">
+<table class="w3-table">
+<tbody>
+	<tr>
+		<td colspan = "3">
+		<h3>Friendlists you are invited to</h3>
+		</td>
+	</tr>
+{% for i in friendlist_render['INVITED'] %}
+	<tr>
+		<td padding="0">
+			<strong>{{ i.friendlist }}</strong><br>
+			{{ i.description }} <br>
+			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} joined</i></small>
+		</td>
+		<td> 
+	
+		<td> 
+			  <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-check"></i></a>	
+		</td>
+		<td>
+			  <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-close"></i></a>			
+		</td>
+	</tr>
 
-        <section class="sec">
+	{% endfor %}
 
-          {% if user.images %}
-            <img src="{{user.images[0].url}}" class="img-square">
-          {% else %}
-            <img src="http://bit.ly/2nXRRfX" class="img-square">
-          {% endif %}
 
-          <h3>You have {{ user.followers.total }} followers!</h3>
-        </section>
-      </div>
+	<tr>
+		<td colspan = "3">
+		<h3>Friendlists you joined</h3>
+		</td>
+	</tr>
 
-      <div class="col-sm-4">
+{% for i in friendlist_render['JOINED'] %}
+	<tr>
+		<td padding="0">
+			<strong>{{ i.friendlist }}</strong><br>
+			{{ i.description }}<br>
+			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} joined</i></small>
+		</td>
+		<td> 
+	
+		<td> 
+			  <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-play"></i></a>	
+		</td>
+		<td>
+			  <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-close"></i></a>			
+		</td>
+	</tr>
 
-        <h3> Your playlists: </h3>
-        <hr class="half-rule"/>
+	{% endfor %}
 
-        {% for play in playlists %}
-          <div class='row'>
-            <a href="{{ play.external_urls.spotify }}">
+	
+	<tr>
+		<td colspan = "3">
+		<h3>Friendlists you have started</h3>
+		</td>
+	</tr>
 
-              <div class='col-sm-8'>
-                <span>{{ play.name }} </span>
-              </div>
+{% for i in friendlist_render['HOST'] %}
+	<tr>
+		<td padding="0">
+			<strong>{{ i.friendlist }}</strong><br>
+			{{ i.description }}<br>
+			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} joined</i></small>
+		</td>
+		<td> 
+	
+		<td> 
+		</td>
+		<td>
+			  <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-clock-o"></i></a>			
+		</td>
+	</tr>
 
-            </a>
-          </div>
-        {% endfor %}
-      </div>
-<!--
-      <div class="col-sm-4">
+	{% endfor %}
+</tbody>
+</table>
+</div>
+ 
+<hr>
 
-        <h3> Your top artist: </h3>
-        <hr class="half-rule"/>
-
-        {% for artist in top_artists %}
-          <div class='row'>
-            <a href="{{url_for('artist', id=artist.id) }}">
-
-              <div class='col-sm-8'>
-                <span>{{ artist.name }} </span>
-              </div>
-
-            </a>
-          </div>
-        {% endfor %}
-      </div> -->
-
-      <div class="col-sm-4">
-
-        <h3> Recently played:</h3>
-        <hr class="half-rule"/>
-
-        {% for track in recently_played %}
-          <div class='row'>
-            <a href="{{track.track.external_urls.spotify}}">
-
-              <div class='col-sm-8'>
-                <span>{{track.track.name}}</span>
-              </div>
-
-            </a>
-          </div>
-        {% endfor %}
-      </div>
-
-    </div>
+	
+	<div class="w3-center w3-padding">
+		<a href= "/intro"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Cancel</button></a>
 	</div>
 
 {% endif %}

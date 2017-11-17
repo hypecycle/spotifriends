@@ -9,12 +9,16 @@
 from flask import Flask, request, redirect, g, render_template, session
 from spotify_requests import spotify
 from spotify_requests import responseparser
+from spotify_requests import friendlistparser
 
 app = Flask(__name__)
 app.secret_key = 'some key for session'
 
 friendList = '17hours2hamburg' # fix during prototype. 
 friendListDescr = 'The longer the way, the better the music needs to be' #fix during pt
+
+
+friendlist_database = [{'17hours2hamburg': [{'user': '1121800629', 'status': 'HOST', 'token': '1234567890123455'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'RND16DTOKENJHOKN'}],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHUNGJOKHNKGOHGS'}, {'user': 'anja*hh*', 'status': 'HOST', 'token': 'HGUJHGZTVBKLOÖMN'}],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [{'user': '1121800629', 'status': 'INVITED', 'token': 'NBHJUZTRFDSEDFCV'},{'user': 'anja*hh*', 'status': 'REJECTED', 'token': 'GHFRCVGFDE$%RTFG'}],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHGZBVGFDERDXCVDR'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'HGT&/76ghBVGHGFR'}], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
 
 # ----------------------- AUTH API PROCEDURE -------------------------
 
@@ -64,28 +68,6 @@ def artist(id):
                            related_artists=related,
                            image_url=image_url,
                            tracks=tracks)
-
-
-@app.route('/profile')
-def profile():
-    if 'auth_header' in session:
-        auth_header = session['auth_header']
-        # get profile data
-        profile_data = spotify.get_users_profile(auth_header)
-
-        # get user playlist data
-        playlist_data = spotify.get_users_playlists(auth_header)
-
-        # get user recently played tracks
-        recently_played = spotify.get_users_recently_played(auth_header)
-
-        if valid_token(recently_played):
-            return render_template("profile.html",
-                               user=profile_data,
-                               playlists=playlist_data["items"],
-                               recently_played=recently_played["items"])
-
-    return render_template('profile.html')
     
 
 @app.route('/profile2')
@@ -107,13 +89,48 @@ def profile2():
 
     return render_template('profile2.html')
     
+    
+@app.route('/profile')
+def profile():
+	if 'auth_header' in session:
+		auth_header = session['auth_header']
+               
+		# get profile data
+		profile_data = spotify.get_users_profile(auth_header)        
+
+		if valid_token(profile_data): 
+        	
+			#Requests all data from spotify and forms a dict
+			database_current_user, uid = responseparser.get_user_data(auth_header, profile_data)
+            
+			#Loads existing db, builds db, adds user or replaces user 
+			database_user = responseparser.update_main_user_db(database_current_user)
+            
+			#display ANY name, even for user which names are not set 1. Display name, 2. Given name, 3. UID
+			parsed_name_current_user = responseparser.parse_name(database_current_user)
+            
+			parsed_image_current_user = responseparser.parse_image(database_current_user)
+			
+			friendlist_list = friendlistparser.render_list_of_friendlists(friendlist_database, uid)
+			
+            
+			return render_template("profile.html",
+								user = profile_data,
+								userimage = parsed_image_current_user,
+								username = parsed_name_current_user,
+								friendlist_render = friendlist_list)
+
+	return render_template('profile.html')
+    
+    
+    
 @app.route('/intro')
 def intro_screen():
     return render_template('intro.html')
     
     						
 @app.route('/dash')
-def loading_screen():
+def dashboard_screen():
     if 'auth_header' in session:
         auth_header = session['auth_header']
                
@@ -123,7 +140,7 @@ def loading_screen():
         if valid_token(profile_data): 
         	
         	#Requests all data from spotify and forms a dict
-            database_current_user = responseparser.get_user_data(auth_header, profile_data)
+            database_current_user, uid = responseparser.get_user_data(auth_header, profile_data)
             
             #Loads existing db, builds db, adds user or replaces user 
             database_user = responseparser.update_main_user_db(database_current_user)
@@ -143,9 +160,6 @@ def loading_screen():
     return render_template('dashboard.html')
     
 
-    
-
-    
 
 
 @app.route('/contact')
