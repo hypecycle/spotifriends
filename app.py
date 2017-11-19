@@ -16,6 +16,8 @@ app.secret_key = 'some key for session'
 
 friendList = '17hours2hamburg' # fix during prototype. 
 friendListDescr = 'The longer the way, the better the music needs to be' #fix during pt
+checkint = 0 #temp
+closeint = 0 #temp
 
 
 friendlist_database = [{'17hours2hamburg': [{'user': '1121800629', 'status': 'HOST', 'token': '1234567890123455'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'RND16DTOKENJHOKN'}],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHUNGJOKHNKGOHGS'}, {'user': 'anja*hh*', 'status': 'HOST', 'token': 'HGUJHGZTVBKLOÖMN'}],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [{'user': '1121800629', 'status': 'INVITED', 'token': 'NBHJUZTRFDSEDFCV'},{'user': 'anja*hh*', 'status': 'REJECTED', 'token': 'GHFRCVGFDE$%RTFG'}],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHGZBVGFDERDXCVDR'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'HGT&/76ghBVGHGFR'}], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
@@ -94,6 +96,14 @@ def profile2():
 def profile():
 	if 'auth_header' in session:
 		auth_header = session['auth_header']
+		
+		"""error = None
+		if request.method == 'POST':
+			if request.form['submit'] == 'Do Something':
+				pass # do something
+			elif request.form['submit'] == 'Do Something Else':
+				pass # do something else"""
+ 
                
 		# get profile data
 		profile_data = spotify.get_users_profile(auth_header)        
@@ -122,6 +132,12 @@ def profile():
 
 	return render_template('profile.html')
     
+
+@app.route('/testbutton/<payload>')
+
+def test_button(payload):
+
+	return render_template('test_button.html', pay = payload)
     
     
 @app.route('/intro')
@@ -140,7 +156,8 @@ def dashboard_screen():
         if valid_token(profile_data): 
         	
         	#Requests all data from spotify and forms a dict
-            database_current_user, uid = responseparser.get_user_data(auth_header, profile_data)
+            database_current_user, uid = responseparser.get_user_data(auth_header,
+            profile_data)
             
             #Loads existing db, builds db, adds user or replaces user 
             database_user = responseparser.update_main_user_db(database_current_user)
@@ -159,6 +176,7 @@ def dashboard_screen():
 
     return render_template('dashboard.html')
     
+
 
 
 
