@@ -1,6 +1,6 @@
 import string
 #import random
-from spotify_requests import spotify
+from spotify_requests import spotify, friendlistparser
 import logging
 import datetime
 import pickle
@@ -159,12 +159,16 @@ def load_database(fileName):
 
 	""" Loads databases from data-folder, returns unpickled list """
 	
+	logging.info("*** start responseparser.load_database()")
+
 	try:
 		with open('data/' + fileName+'.pickle', 'rb') as handle:
 			data = pickle.load(handle)
 	except:
-		logging.info("Loading failed")
+		logging.info("responseparser.load_database(): Loading failed")
 		data = []
+	
+	logging.info("*** finished responseparser.load_database()")
 	return data
 	
 	
@@ -172,18 +176,25 @@ def save_database(fileName, database):
 
 	""" Writes databases as pickled file """
 	
+	logging.info("*** start responseparser.save_database()")
+
+	
 	try:
 		with open('data/' + fileName+'.pickle', 'wb') as handle:
 			pickle.dump(database, handle, protocol=pickle.HIGHEST_PROTOCOL)
 	except:
-		logging.info("Saving failed")
-	return 
+		logging.info("responseparser.save_database(): Saving failed")
+		
+	logging.info("*** finished responseparser.save_database()")
 
+	return 
+ 
 
 def update_main_user_db(database_current_user):
 
 	""" Loads database 'database_user'. Does all the magic. If database_user is empty or uid not present: 
-	appends database_current_user. If user present: Updates info in database. Two methods in test_dict9 on MacBook"""
+	appends database_current_user. If user present: Updates info in database. Two methods in test_dict9 on MacBook
+	friend_list is needed for auto_invite until real invite is set"""
 
 	database_user_before = load_database('database_user') #loads database up to now. Passes to var
 	
@@ -198,33 +209,60 @@ def update_main_user_db(database_current_user):
 			logging.info("Found user {}".format(next (iter (database_current_user[0]))))
 		else:
 			database_user_new.append(i) #iteration uid not user? add old item
-			logging.info("User {} (before) and user {} (current) don't match".format(next(iter(i)), next (iter (database_current_user[0]))))
+			#logging.info("User {} (before) and user {} (current) don't match".format(next(iter(i)), next (iter (database_current_user[0]))))
 
 	
 	#if the search term hasn't been found, add user at the end   
 	if not change_flag:
 		database_user_new.append(database_current_user[0])
-		#logging.info("User {} not found updating user db. Appended".format(next (iter (database_current_user[0]))))
+		logging.info("User {} not found updating user db. Appended".format(next (iter (database_current_user[0]))))
+
+		###find clever way to pass auto-invite		
+		friendlistparser.auto_invite(database_current_user[0]) #calls friendlist-function that updates and saves the db
 		
 	save_database('database_user', database_user_new)
 	
 	return database_user_new
 	
 
+#OLD METHOD: current user is not present in the new structure 23.11.
+#Still called from dashboard
 def parse_name(current_user):
 	"""Parse current user to return the name. 1. display_name, 2. given_name, 3. uid"""
 	
 	user_data = current_user[0].get(next(iter(current_user[0]))).get('cumulated_name')
 	
 	return user_data #return UID
+
+#New method: parses profile_data
+def parse_name_pd(profile_data):
+	"""Parse current user to return the name. 1. display_name, 2. uid"""
 	
+	user_data = profile_data.get('display_name')
 	
+	if not user_data:
+	    user_data = profile_data.get('id')
+	
+	return user_data 
+	
+#OLD METHOD: current user is not present in the new structure 23.11.	
 def parse_image(current_user):
 	"""Parse current users dataset to return image_url. Alternative URL for users with no image has been constructed earlier in parse_users_profile"""
 	
 	user_data = current_user[0].get(next(iter(current_user[0])))
 	
 	return user_data.get('imageurl')
+
+#New method: parses profile_data
+def parse_image_pd(profile_data):
+	"""Parse current users dataset to return image_url. Alternative URL for users with no image is set"""
+	
+	if profile_data.get('images'):	
+	    user_data = profile_data.get('images')[0].get('url')
+	else:
+	    user_data = '/static/imgs/placeholder.jpg'
+	
+	return user_data
 	
 def parse_user_list_dashboard(user_database):
 	"""parse and return a list of strings with users and data ready for dashboard"""
