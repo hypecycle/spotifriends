@@ -109,7 +109,24 @@ def profile():
     else:
         return render_template("profile.html")
 
+
+@app.route('/profile/invite/<tokenPayload>')
+
+def invite(tokenPayload):
     
+    invited_user, invited_friendList, error = friendlistparser.resolve_token(tokenPayload)
+
+    if error:
+        return redirect(url_for('error_invite'))
+        
+    friendlist_database_new = friendlistparser.update_friendlist(friendlistparser.load_update_friendlist_database('database_friendlist'), invited_friendList, invited_user, 'INVITED')
+    friendlistparser.save_friendlist_database(friendlist_database_new, 'database_friendlist')
+
+    logging.info("App: Success. Invited {} by link".format(session['invited_user']))
+    
+    return redirect(url_for('profile'))
+
+
     
 @app.route('/profile/join/<uidPayload>/<friendListPayload>')
 
@@ -135,6 +152,14 @@ def reject(friendListPayload, uidPayload):
 def test_button(payload):
 
     return render_template('test_button.html', pay = payload)
+    
+    
+    
+@app.route('/error_invite')
+
+def error_invite():
+    return render_template('error_invite.html')
+ 
     
 @app.route('/version')
 def version_screen():

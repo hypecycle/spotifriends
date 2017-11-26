@@ -118,11 +118,6 @@ def auto_invite(uid):
 
     friendlist_database = load_update_friendlist_database('database_friendlist')
     
-    '''#Initial content
-    if not friendlist_database:
-        friendlist_database = [{'17hours2hamburg': [],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
-        logging.info("Auto Invite: friendlist database set to []")'''
-
 
     friendlist_builder = []  #blueprint
     friendlist_feature_builder = {} #blueprint
@@ -155,5 +150,32 @@ def auto_invite(uid):
 
     return
     
+    
+    
+def resolve_token(token):
+
+    """Takes the friendlist and a token and returns the user, the name of the friendlist plus a boolean error"""
+
+    friendlist_database = load_update_friendlist_database('database_friendlist')
+    invited_user =  ''
+    friendList = ''
+    error = True
+
+    """ccc"""
+    for friendlist_item in friendlist_database:
+        itername = (next(iter(friendlist_item)))
+        for users in friendlist_item.get(itername):
+            #print(users.get('token'))
+            if users.get('token') == token:
+                print('found')
+                invited_user = users.get('user')
+                friendList = itername
+                error = False
+                break
+
+    return(invited_user, friendList, error)
+        
+          
+
 
 
