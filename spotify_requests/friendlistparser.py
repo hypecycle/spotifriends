@@ -1,6 +1,8 @@
 import logging
 import datetime
 import pickle
+import string
+import random
 from spotify_requests import responseparser
 
 
@@ -10,6 +12,10 @@ logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(message)s"
     )
 
+
+def generate_pwd(size=32, chars=string.ascii_uppercase + string.digits):
+	return ''.join(random.choice(chars) for _ in range(size))
+	
 
 def render_list_of_friendlists(friendlist_database, uid):
 
@@ -41,9 +47,7 @@ def render_list_of_friendlists(friendlist_database, uid):
     
 def update_friendlist(friendlist_database, friendlist_to_join, uid, new_status):
 
-    """Expects friendlist_database, the name of the friendlist to join, uid and the new status
-
-    """
+    """Expects friendlist_database, the name of the friendlist to join, uid and the new status"""
 
     friendlist_builder = []  #blueprint
     friendlist_feature_builder = {} #blueprint
@@ -80,8 +84,8 @@ def load_update_friendlist_database(fileName):
         with open('data/' + fileName+'.pickle', 'rb') as handle:
             data = pickle.load(handle)
     except:
-        logging.info("Loading friendList failed. inserted generic data")
-        data = [{'17hours2hamburg': [{'user': '1121800629', 'status': 'HOST', 'token': '1234567890123455'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'RND16DTOKENJHOKN'}],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHUNGJOKHNKGOHGS'}, {'user': 'anja*hh*', 'status': 'HOST', 'token': 'HGUJHGZTVBKLOÖMN'}],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [{'user': '1121800629', 'status': 'INVITED', 'token': 'NBHJUZTRFDSEDFCV'},{'user': 'anja*hh*', 'status': 'REJECTED', 'token': 'GHFRCVGFDE$%RTFG'}],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHGZBVGFDERDXCVDR'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'HGT&/76ghBVGHGFR'}], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
+        logging.info("Loading friendList failed.")
+        data = [{'17hours2hamburg': [],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
 
     return data
 
@@ -94,6 +98,9 @@ def save_friendlist_database(database, fileName):
     try:
         with open('data/' + fileName+'.pickle', 'wb') as handle:
             pickle.dump(database, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        logging.info("Friendlist saved")
+        logging.info('File name: {}, database {}'.format(fileName, database))
+
     except:
         logging.info("Saving friendlist failed")
         #logging.info('File name: {}, database {}'.format(fileName, database))
@@ -102,14 +109,20 @@ def save_friendlist_database(database, fileName):
     
     
 def auto_invite(uid):
-    """Helper/dummy function: invites and joins users to a friendlist """
 
+    """Helper/dummy function: loads db, invites and auto-joins users to a friendlist, 
+    saves db and returns the new friendlist"""
+
+
+    logging.info("Entered auto-invite")
 
     friendlist_database = load_update_friendlist_database('database_friendlist')
     
-    #Initial content
+    '''#Initial content
     if not friendlist_database:
-        friendlist_database = [{'17hours2hamburg': [{'user': '1121800629', 'status': 'HOST', 'token': '1234567890123455'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'RND16DTOKENJHOKN'}],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHUNGJOKHNKGOHGS'}, {'user': 'anja*hh*', 'status': 'HOST', 'token': 'HGUJHGZTVBKLOÖMN'}],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [{'user': '1121800629', 'status': 'INVITED', 'token': 'NBHJUZTRFDSEDFCV'},{'user': 'anja*hh*', 'status': 'REJECTED', 'token': 'GHFRCVGFDE$%RTFG'}],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [{'user': '1121800629', 'status': 'JOINED', 'token': 'JHGZBVGFDERDXCVDR'}, {'user': 'anja*hh*', 'status': 'INVITED', 'token': 'HGT&/76ghBVGHGFR'}], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
+        friendlist_database = [{'17hours2hamburg': [],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
+        logging.info("Auto Invite: friendlist database set to []")'''
+
 
     friendlist_builder = []  #blueprint
     friendlist_feature_builder = {} #blueprint
@@ -122,7 +135,7 @@ def auto_invite(uid):
         friendlist_user_builder = []
 
         i = friendlist_list_object.get(friendlist_itername)
-        i.append({'user': uid, 'status': 'JOINED', 'token': 'JHUNGJOKHNKGOHGS'})
+        i.append({'user': uid, 'status': 'INVITED', 'token': generate_pwd()})
 
         friendlist_user_builder.append(i)
 
@@ -138,10 +151,9 @@ def auto_invite(uid):
         
         friendlist_database_builder.append(friendlist_builder)
         
-    save_friendlist_database('database_friendlist', friendlist_database_builder)
+    save_friendlist_database(friendlist_database_builder, 'database_friendlist')
 
-
-    return(friendlist_database_builder)
+    return
     
 
 
