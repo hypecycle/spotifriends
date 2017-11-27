@@ -6,7 +6,8 @@
 
 '''
 
-from flask import Flask, request, redirect, g, render_template, session, url_for
+from flask import Flask, request, redirect, g, render_template, session, url_for, flash
+from wtforms import Form, TextField, TextAreaField, validators, StringField, SubmitField
 from spotify_requests import spotify
 from spotify_requests import responseparser
 from spotify_requests import friendlistparser
@@ -20,6 +21,12 @@ friendList = ''
 database_user = '' 
 checkint = 0 #temp
 closeint = 0 #temp
+
+class ReusableForm(Form):
+    name = TextField('Name:', validators=[validators.required()])
+    description = TextField('Description:', validators=[validators.required()])
+    invited_name = TextField('Invited:', validators=[validators.required(), validators.Length(min=3, max=35, message='Name has to be 3 to 35 characters')])
+    invited_mail = TextField('Mail:', validators=[validators.required(), validators.Email(message='Please, enter valid email')])
 
 friendlist_database = [{'17hours2hamburg': [],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
 
@@ -122,7 +129,7 @@ def invite(tokenPayload):
     friendlist_database_new = friendlistparser.update_friendlist(friendlistparser.load_update_friendlist_database('database_friendlist'), invited_friendList, invited_user, 'INVITED')
     friendlistparser.save_friendlist_database(friendlist_database_new, 'database_friendlist')
 
-    logging.info("App: Success. Invited {} by link".format(session['invited_user']))
+    logging.info("App: Success. Invited {} by link".format(invited_user))
     
     return redirect(url_for('profile'))
 
@@ -153,6 +160,38 @@ def test_button(payload):
 
     return render_template('test_button.html', pay = payload)
     
+
+@app.route('/new_playlist', methods=['GET', 'POST'])
+
+def new_playlist():
+
+    form = ReusableForm(request.form)
+    logging.info(form.errors)
+    error = False
+    
+    if request.method == 'POST':
+        name=request.form['name']
+        description = request.form['description']
+        invited_name = request.form['invited_name']
+        invited_mail = request.form['invited_mail']
+ 
+        if not form.validate():
+            error = True
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash("Field \'%s\' %s" % (
+                        getattr(form, field).label.text,
+                        error))
+                        
+        if friendlistparser.check_friendlist(name):
+            error = True
+            flash('Friendlist \'' + name + '\' already in use. Choose a new name')
+            
+        if not error:
+            flash('New friendlist \'' + name + '\' created')
+ 
+    return render_template('new_playlist.html', form=form)
+
     
     
 @app.route('/error_invite')

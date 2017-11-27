@@ -130,7 +130,17 @@ def auto_invite(uid):
         friendlist_user_builder = []
 
         i = friendlist_list_object.get(friendlist_itername)
-        i.append({'user': uid, 'status': 'INVITED', 'token': generate_pwd()})
+        
+        #Give different status messages to different friendlists
+        status_builder = "JOINED" 
+        
+        if friendlist_itername == '17hours2hamburg':
+            status_builder = 'REJECTED'
+        elif friendlist_itername == 'The_end_is_near':
+            status_builder = 'HOST'
+
+        
+        i.append({'user': uid, 'status': status_builder, 'token': generate_pwd()})
 
         friendlist_user_builder.append(i)
 
@@ -176,6 +186,18 @@ def resolve_token(token):
     return(invited_user, friendList, error)
         
           
+def check_friendlist(searchterm):
 
+    """Expects a friendlist name to check. Returns True if already taken"""
+    
+    friendlist_database = load_update_friendlist_database('database_friendlist')
+    check = False
+    
+    for friendlist_item in friendlist_database:
+        if searchterm in friendlist_item:
+            check = True
+            logging.info('New friendlist: {} already taken'.format(searchterm))
+            
+    return check
 
 

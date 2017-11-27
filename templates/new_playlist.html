@@ -4,18 +4,73 @@
 
 
 <div class="w3-center w3-padding">
-  <h2 class="w3-animate-bottom">SPOTIFY FRIENDSHIP SAVER APP</h2>
-  <p class="w3-large">Music is not for fighting. Music is for sharing! Connect your Spotify with the Friendship saver app and find the music, you and all of your friends will love.</p>
+  <h2 class="w3-center">CREATE FRIENDLIST</h2>
+  <p class="w3-large">Start a new list and invite friends.</p>
+  
 </div>
 
-<br>
-<br>
-<br>
-<br>
+<div class="w3-padding">
 
+  <form  action="" method="post" role="form">
+  
+    {{ form.csrf }}
+    
+        <label for="name"><small>Friendlist:</small></label>
+        {{ form.name(class_='w3-input', id="name", placeholder='Enter friendlist name') }}<br>
+        <!--<input type="text" class="w3-input" id="name" name="name" placeholder="Enter friendlist name"><br>-->
+
+      
+        <label for="description"><small>Description:</small></label><br>
+        {{ form.description(class_='w3-input', id="name", placeholder='Friendlist description') }}<br>
+        <!--<input type="text" class="w3-input" id="name" name="description" placeholder="Friendlist description"><br>-->
+        
+        <label for="invited_name"><small>Name:</small></label><br>
+        {{ form.invited_name(class_='w3-input', id="name", placeholder='Name of friend to invite') }}<br>
+        <!--<input type="text" class="w3-input" id="name" name="invited_name" placeholder="Name of friend to invite"><br> -->      
+    
+        <label for="invited_mail"><small>Email:</small></label><br>
+        {{ form.invited_mail(class_='w3-input', id="name", placeholder='Friend\'s email adress') }}<br>
+        <!--<input type="text" class="w3-input" id="name" name="invited_mail" placeholder="Friend's email adress"><br><br> -->     
+        
+        
+        <br>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+ 
+        {% for message in messages %}
+            {% if "Error" not in message[1]: %}
+                <div class="w3-container w3-dark-gray">
+                <i class="fa fa-exclamation-triangle"></i> {{ message[1] }}
+                </div>
+            {% endif %}
+ 
+            {% if "Error" in message[1]: %}
+                <div class="alert alert-warning">
+                {{ message[1] }}
+                </div>
+            {% endif %}
+        {% endfor %}
+            {% endif %}
+        {% endwith %}
+   
+        
+        <div class="w3-center w3-padding">
+            <button type="submit" class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey w3-center" style="font-weight:900;">Submit</button>
+        </div>
+
+  </form>
+ 
+
+</div>
+<br>      
+</div>
+</div>
+
+<!--
 <div class="w3-center w3-padding">
+<button type="submit" class="btn btn-success">Submit</button>
 	<a href= "/profile"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Continue</button></a>
 </div>
-
+-->
 
 {% endblock %}
