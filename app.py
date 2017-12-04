@@ -11,6 +11,7 @@ from wtforms import Form, TextField, TextAreaField, validators, StringField, Sub
 from spotify_requests import spotify
 from spotify_requests import responseparser
 from spotify_requests import friendlistparser
+from spotify_requests import mailhandler
 import logging
 
 
@@ -22,11 +23,20 @@ database_user = ''
 checkint = 0 #temp
 closeint = 0 #temp
 
-class ReusableForm(Form):
+class FLForm(Form):
     name = TextField('Name:', validators=[validators.required()])
     description = TextField('Description:', validators=[validators.required()])
     invited_name = TextField('Invited:', validators=[validators.required(), validators.Length(min=3, max=35, message='Name has to be 3 to 35 characters')])
     invited_mail = TextField('Mail:', validators=[validators.required(), validators.Email(message='Please, enter valid email')])
+    addfriend = SubmitField(label='Add another friend')
+    savefriend = SubmitField(label='Save and invite')
+
+class AddForm(Form):
+    invited_name = TextField('Invited:', validators=[validators.required(), validators.Length(min=3, max=35, message='Name has to be 3 to 35 characters')])
+    invited_mail = TextField('Mail:', validators=[validators.required(), validators.Email(message='Please, enter valid email')])
+    addfriend = SubmitField(label='Add another friend')
+    savefriend = SubmitField(label='Save and invite')
+
 
 friendlist_database = [{'17hours2hamburg': [],'description': 'The longer the way, the better the playlist', 'genres': {}, 'clusters': {}},{'The_end_is_near': [],'description': 'Worlds last best party', 'genres': {}, 'clusters': {}}, {'Lapdance_night': [],'description': 'Lap to lap', 'genres': {}, 'clusters': {}},{'Partyaninamlparty': [], 'description': 'Calling all animals', 'genres': {}, 'clusters': {}}]
 
@@ -66,8 +76,10 @@ def callback():
     logging.info("Callback entered for {}".format(session['uid']))
     
     #writing crucial data do session to make it available everywhere
-    session['name'] = responseparser.parse_name(database_current_user)
-    session['image'] = responseparser.parse_image(database_current_user)
+    #session['name'] = responseparser.parse_name(database_current_user)
+    #session['image'] = responseparser.parse_image(database_current_user)
+    session['name'] = responseparser.parse_name_pd(profile_data) #new method
+    session['image'] = responseparser.parse_image_pd(profile_data) #new method
             
     #Loads existing db, builds db, adds user or replaces user, builds fake_invite
     database_user, known = responseparser.update_main_user_db(database_current_user)
@@ -85,9 +97,9 @@ def valid_token(resp):
 # -------------------------- API REQUESTS ----------------------------
 
 
-@app.route("/")
+"""@app.route("/")
 def index():
-    return render_template('index.html')
+    return redirect(url_for('intro_screen'))"""
     
     
 @app.route('/profile')
@@ -100,19 +112,21 @@ def profile():
         profile_data = spotify.get_users_profile(auth_header)
         uid = profile_data.get('id')
         
-        friendlist_database = friendlistparser.load_update_friendlist_database('database_friendlist')
+        if valid_token(profile_data):
+        
+            friendlist_database = friendlistparser.load_update_friendlist_database('database_friendlist')
 
-        parsed_name_current_user = responseparser.parse_name_pd(profile_data)    
-        parsed_image_current_user = responseparser.parse_image_pd(profile_data)
+            parsed_name_current_user = responseparser.parse_name_pd(profile_data)    
+            parsed_image_current_user = responseparser.parse_image_pd(profile_data)
             
-        friendlist_list = friendlistparser.render_list_of_friendlists(friendlist_database, uid)
+            friendlist_list = friendlistparser.render_list_of_friendlists(friendlist_database, uid)
             
             
-        return render_template("profile.html",
-                                user = profile_data,
-                                userimage = parsed_image_current_user,
-                                username = parsed_name_current_user,
-                                friendlist_render = friendlist_list)
+            return render_template("profile.html",
+                                    user = profile_data,
+                                    userimage = parsed_image_current_user,
+                                    username = parsed_name_current_user,
+                                    friendlist_render = friendlist_list)
     else:
         return render_template("profile.html")
 
@@ -165,15 +179,18 @@ def test_button(payload):
 
 def new_playlist():
 
-    form = ReusableForm(request.form)
+    form = FLForm(request.form)
     logging.info(form.errors)
     error = False
+    givenname_invited = []
+    mail_invited = []
     
     if request.method == 'POST':
         name=request.form['name']
         description = request.form['description']
         invited_name = request.form['invited_name']
         invited_mail = request.form['invited_mail']
+
  
         if not form.validate():
             error = True
@@ -188,12 +205,59 @@ def new_playlist():
             flash('Friendlist \'' + name + '\' already in use. Choose a new name')
             
         if not error:
-            flash('New friendlist \'' + name + '\' created')
- 
-    return render_template('new_playlist.html', form=form)
+            #set name to handle in add_user-form
+            session['friendlist_edit'] = name 
+            friendlistparser.create_friendlist(name, description, invited_name, invited_mail, session['uid'])
 
+            
+        if not error and form.savefriend.data:
+            flash('New friendlist \'' + name + '\' created')
+            return redirect(url_for('profile'))
+            
+        if not error and form.addfriend.data:
+            return redirect(url_for('add_user'))
+
+    return render_template('new_playlist.html', 
+                            form=form)
+                            
+@app.route('/add_user', methods=['GET', 'POST'])
+
+def add_user():
+    form = AddForm(request.form)
+    logging.info(form.errors)
+    error = False
     
+    friendlist_name = session['friendlist_edit']
+    uid = session['uid']
+    friends_to_edit, description_to_edit = friendlistparser.ask_friendlist(friendlist_name, uid)
     
+    givenname_invited = []
+    mail_invited = []
+    
+    if request.method == 'POST':
+        invited_name = request.form['invited_name']
+        invited_mail = request.form['invited_mail']
+
+        if not form.validate():
+            error = True
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash("Field \'%s\' %s" % (
+                        getattr(form, field).label.text,
+                        error))
+                        
+        if not error and form.addfriend.data:
+            friendlistparser.add_friend(session['friendlist_edit'], invited_name, invited_mail)
+            return redirect(url_for('add_user'))
+ 
+    return render_template('add_user.html', 
+                            form=form,
+                            friendlist = friendlist_name,
+                            friends = friends_to_edit,
+                            description = description_to_edit
+                            )
+
+
 @app.route('/error_invite')
 
 def error_invite():
@@ -203,10 +267,33 @@ def error_invite():
 @app.route('/version')
 def version_screen():
     return render_template('version.html')
-    
-@app.route('/intro')
+ 
+@app.route('/intro')   
+@app.route('/')
 def intro_screen():
-    return render_template('intro.html')
+
+    if 'auth_header' in session:
+        button1_text = "Continue"
+        button2_text = "Logout"
+        message1_text = "You are already logged in as {}.".format(session['name'])
+        message2_text = "Not you?"
+    else:
+        button1_text = "Login"
+        button2_text = "" #Used as marker. Button
+        message1_text = "To find out which music you like, you need to login to spotify."
+        message2_text = ""
+ 
+    return render_template('intro.html',
+                            button1 = button1_text,
+                            button2 = button2_text,
+                            message1 = message1_text,
+                            message2 = message2_text)
+                            
+@app.route("/lose_auth")
+def lose_auth():
+    session.clear() #not really working
+    logging.info("deleting auth info")
+    return redirect(url_for('intro_screen'))
     
                             
 @app.route('/dashboard')
@@ -221,7 +308,7 @@ def dashboard_screen():
         #Loads existing db, builds db, adds user or replaces user 
         database_user = responseparser.load_database('database_user')
         friendlist_database = friendlistparser.load_update_friendlist_database('database_friendlist')
-                    
+                            
         return render_template("dashboard.html",
                                 user = profile_data,
                                 userlist = responseparser.parse_user_list_dashboard(database_user),

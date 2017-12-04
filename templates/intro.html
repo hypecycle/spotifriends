@@ -4,18 +4,38 @@
 
 
 <div class="w3-center w3-padding">
-  <h2 class="w3-animate-bottom">SPOTIFY FRIENDSHIP SAVER APP</h2>
-  <p class="w3-large">Music is not for fighting. Music is for sharing! Connect your Spotify with the Friendship saver app and find the music, you and all of your friends will love.</p>
+    <h2 class="w3-animate-bottom">SPOTIFY FRIENDSHIP SAVER APP</h2>
+    <p class="w3-large">Music is not for fighting. Music is for sharing! Connect your Spotify with the Friendship saver app and find the music, you and all of your friends will love.</p>
+    <br>
+    <br>
 </div>
 
-<br>
-<br>
-<br>
-<br>
+
+{% if message1 %}
+
+    <div class="w3-center w3-padding">
+        <p class="w3-large">{{ message1 }}</p>
+    </div>
+
+{% endif %}
 
 <div class="w3-center w3-padding">
-	<a href= "/profile"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Continue</button></a>
+	<a href= "/auth"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">{{ button1 }}</button></a>
 </div>
+
+{% if message2 %}
+
+    <!--<div class="w3-center w3-padding">
+        <br>
+        <p class="w3-large">{{ message2 }}</p>
+    </div>-->
+
+    <div class="w3-center w3-padding">
+        <a href= "/lose_auth"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">{{ button2 }}</button></a>
+    </div>
+    
+{% endif %}
+
 
 
 {% endblock %}

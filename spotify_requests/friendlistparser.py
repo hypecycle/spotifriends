@@ -201,3 +201,58 @@ def check_friendlist(searchterm):
     return check
 
 
+def create_friendlist(friendlist_name, friendlist_description, givenname_invited, mail_invited, host_uid):
+
+    """adds friendlist, host and a first friend to the friendlist"""
+    
+    friendlist_database = load_update_friendlist_database('database_friendlist')
+    
+    #initiates host
+    friendlist_userlist = [{'user': host_uid, 'givenname': None, 'invite_mail': None, 'status': 'HOST', 'token': None}]
+    
+    #Adds users to invite
+    friendlist_userlist.append({'user': None, 'givenname': givenname_invited, 'invite_mail': mail_invited, 'status': 'INVITED', 'token': generate_pwd()})
+    
+    friendlist_builder = {friendlist_name: friendlist_userlist, 'description': friendlist_description, 'genres': {}, 'clusters': {}}
+    friendlist_database.append(friendlist_builder)
+    
+    save_friendlist_database(friendlist_database, 'database_friendlist')
+
+    return 
+
+def ask_friendlist(friendlist_name, uid):
+    """expects the friendlist_name, return a list of users already in + the description """
+
+    friendlist_database = load_update_friendlist_database('database_friendlist')
+
+    friends_to_edit = []
+    
+    for friendlist in friendlist_database: #iterating friendlist_databse into single friendlists
+        friendlist_itername = (next(iter(friendlist))) # returns the name of the current friendlist
+
+        if friendlist_name in friendlist:
+            description_to_edit = friendlist.get('description')
+            for friend in friendlist.get(friendlist_itername): #gets each friend in the friendlist
+                if friend.get('user') != uid: #add everybody except the host
+                    friends_to_edit.append(friend)
+                
+    return friends_to_edit, description_to_edit
+    
+def add_friend(friendlist_name, givenname_invited, mail_invited):
+
+    """takes friendlist name, a givenname, a mail and creates a new friend for this user, the saves the updated list """
+
+    friendlist_database = load_update_friendlist_database('database_friendlist')
+
+    friend_builder = {'user': None, 'givenname': givenname_invited, 'invite_mail': mail_invited, 'status': 'INVITED', 'token': generate_pwd()}
+   
+    for i in range (0, len(friendlist_database)): #iterating friendlist_databse into single friendlists
+        friendlist_itername = (next(iter(friendlist_database[i]))) # returns the name of the current friendlist
+
+        if friendlist_name in friendlist_database[i]:
+            friendlist_database[i][friendlist_itername].append(friend_builder)
+
+    save_friendlist_database(friendlist_database, 'database_friendlist')           
+
+    return
+    

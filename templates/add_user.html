@@ -4,22 +4,42 @@
 
 
 <div class="w3-center w3-padding">
-  <h2 class="w3-center">CREATE FRIENDLIST</h2>
-  <p class="w3-large">Start a new list and invite friends.</p>
+  <h2 class="w3-center">ADD FRIENDS</h2>
+  <p class="w3-large">Enter names and adresses you'd like to join.</p>
   
 </div>
 
-<div class="w3-padding">
+<div>
 
+<hr>
+
+<small>Your friendlist:</small>
+
+    <p class="w3-padding"> <strong>{{ friendlist }}</strong><br>
+    {{ description }} </p>
+    
+<hr>
+<small>Already invited:</small><br>
+    
+    <table class="w3-table">
+        <tbody>
+            {% for friend in friends %}
+	        <tr>
+	            <td padding="0">
+			        <strong>{{ friend.givenname }}</strong>
+			    </td>
+			    <td padding="0">
+			        {{ friend.invite_mail }}
+			    </td>
+			</tr>
+            {% endfor %}
+        </tbody>
+	</table>
+
+<hr>
   <form  action="" method="post" role="form">
   
     {{ form.csrf }}
-    
-    <label for="name"><small>Friendlist:</small></label>
-    {{ form.name(class_='w3-input', id="name", placeholder='Enter friendlist name') }}<br>
-  
-    <label for="description"><small>Description:</small></label><br>
-    {{ form.description(class_='w3-input', id="name", placeholder='Friendlist description') }}<br>
     
     <label for="invited_name"><small>Name:</small></label><br>
     {{ form.invited_name(class_='w3-input', id="name", placeholder='Name of friend to invite') }}<br>
@@ -58,23 +78,10 @@
 
     
   </form>
- 
- 
-    <div class="w3-center w3-padding">
-        <a href= "{{ url_for('profile')}}"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Dismiss</button></a>
 
     </div>
-
-</div>
 <br>      
 </div>
 </div>
-
-<!--
-<div class="w3-center w3-padding">
-<button type="submit" class="btn btn-success">Submit</button>
-	<a href= "/profile"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Continue</button></a>
-</div>
--->
 
 {% endblock %}

@@ -97,11 +97,15 @@ def authorize(auth_token):
     response_data = json.loads(post_request.text)
 
     logging.info("response_data payload: {}".format(response_data))
+    
+    if response_data:
 
-    access_token = response_data["access_token"]
-
-    # use the access token to access Spotify API
-    auth_header = {"Authorization": "Bearer {}".format(access_token)}
+        access_token = response_data["access_token"]
+        # use the access token to access Spotify API
+        auth_header = {"Authorization": "Bearer {}".format(access_token)}
+    else:
+        auth_header = {}
+        
     return auth_header
 
 # ---------------- 2. ARTISTS ------------------------
