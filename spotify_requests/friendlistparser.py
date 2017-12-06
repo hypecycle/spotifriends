@@ -44,6 +44,8 @@ def render_list_of_friendlists(friendlist_database, uid):
 
     return(friendlist_membership)
     
+
+# old style, if not in use, delete 
     
 def update_friendlist(friendlist_database, friendlist_to_join, uid, new_status):
 
@@ -99,7 +101,7 @@ def save_friendlist_database(database, fileName):
         with open('data/' + fileName+'.pickle', 'wb') as handle:
             pickle.dump(database, handle, protocol=pickle.HIGHEST_PROTOCOL)
         logging.info("Friendlist saved")
-        logging.info('File name: {}, database {}'.format(fileName, database))
+        #logging.info('File name: {}, database {}'.format(fileName, database))
 
     except:
         logging.info("Saving friendlist failed")
@@ -161,6 +163,7 @@ def auto_invite(uid):
     return
     
     
+# old style, deprecated, delete?
     
 def resolve_token(token):
 
@@ -184,6 +187,33 @@ def resolve_token(token):
                 break
 
     return(invited_user, friendList, error)
+    
+
+def invite_by_token(token, uid):
+
+    """Expects the token and uid. Loads and saves db. If UID is none it just returns the error and doesn't change the db.
+    If uid is set, it changes db values"""
+
+    error = True
+
+    friendlist_database = load_update_friendlist_database('database_friendlist')
+
+    for i in range(len(friendlist_database)): #iterating through all friendlists 
+        friendlist_itername = (next(iter(friendlist_database[i]))) # returns the friendlist names of friendlist_database
+           
+        for j in range(len(friendlist_database[i][friendlist_itername])):
+            #print(friendlist_database[i][friendlist_itername][j])
+            if friendlist_database[i][friendlist_itername][j].get('token') == token and friendlist_database[i][friendlist_itername][j].get('status') == 'INVITED':
+                if uid:
+                    friendlist_database[i][friendlist_itername][j]['user'] = uid
+                    friendlist_database[i][friendlist_itername][j]['status'] = 'INVITED'
+                error = False
+                break
+
+    logging.info('friendlisparser: Token {} and uid {} produce error={}'.format(token, uid, error))
+    save_friendlist_database(friendlist_database, 'database_friendlist')
+
+    return error
         
           
 def check_friendlist(searchterm):
@@ -256,3 +286,17 @@ def add_friend(friendlist_name, givenname_invited, mail_invited):
 
     return
     
+def get_token(friendlist_name, mail_invited):
+
+    friendlist_database = load_update_friendlist_database('database_friendlist')
+    
+    for friendlist in friendlist_database:
+        if friendlist_name in friendlist:
+            for friend in friendlist.get(friendlist_name):
+                if mail_invited == friend.get('invite_mail'):
+                    token = friend.get('token')
+                    break
+                    
+    return token
+                    
+                    

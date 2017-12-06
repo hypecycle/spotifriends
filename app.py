@@ -20,8 +20,9 @@ app.secret_key = 'sPWLUcu}PdumewjNR9LNYn'
 
 friendList = '' 
 database_user = '' 
-checkint = 0 #temp
-closeint = 0 #temp
+
+base_url = 'http://ddns.buzztelecke.de:81'
+
 
 class FLForm(Form):
     name = TextField('Name:', validators=[validators.required()])
@@ -104,23 +105,31 @@ def index():
     
 @app.route('/profile')
 def profile():
+
     if 'auth_header' in session:
         auth_header = session['auth_header']
         
                
         # get profile data
-        profile_data = spotify.get_users_profile(auth_header)
+        profile_data = spotify.get_users_profile(auth_header) #maybe lose this
         uid = profile_data.get('id')
         
         if valid_token(profile_data):
-        
+            uid = session['uid']
+            new_token = session.get('new_token')
+            
+            if new_token:
+                error = friendlistparser.invite_by_token(new_token, uid)
+                session['new_token'] = None
+                logging.info("App: New token found. db updated")
+
+            
             friendlist_database = friendlistparser.load_update_friendlist_database('database_friendlist')
 
-            parsed_name_current_user = responseparser.parse_name_pd(profile_data)    
-            parsed_image_current_user = responseparser.parse_image_pd(profile_data)
+            parsed_name_current_user = responseparser.parse_name_pd(profile_data) #maybe replace with session info
+            parsed_image_current_user = responseparser.parse_image_pd(profile_data) #maybe replace with session info
             
-            friendlist_list = friendlistparser.render_list_of_friendlists(friendlist_database, uid)
-            
+            friendlist_list = friendlistparser.render_list_of_friendlists(friendlist_database, uid)           
             
             return render_template("profile.html",
                                     user = profile_data,
@@ -134,16 +143,20 @@ def profile():
 @app.route('/profile/invite/<tokenPayload>')
 
 def invite(tokenPayload):
-    
-    invited_user, invited_friendList, error = friendlistparser.resolve_token(tokenPayload)
 
+    # only set with fresh token. Deleted, once database is updated
+    session['new_token'] = tokenPayload 
+    # is set to none, so userbase isn't update in this func call 
+    uid = None
+    
+    #just checking for errors
+    error = friendlistparser.invite_by_token(tokenPayload, uid)
+    
     if error:
+        logging.info("App: error resolving token {}".format(tokenPayload))
         return redirect(url_for('error_invite'))
         
-    friendlist_database_new = friendlistparser.update_friendlist(friendlistparser.load_update_friendlist_database('database_friendlist'), invited_friendList, invited_user, 'INVITED')
-    friendlistparser.save_friendlist_database(friendlist_database_new, 'database_friendlist')
-
-    logging.info("App: Success. Invited {} by link".format(invited_user))
+    logging.info("App: Success. Token resolved")
     
     return redirect(url_for('profile'))
 
@@ -181,9 +194,13 @@ def new_playlist():
 
     form = FLForm(request.form)
     logging.info(form.errors)
+    uid = session['uid']
+    imagepath = session['image']
     error = False
     givenname_invited = []
     mail_invited = []
+    friends_to_edit = []
+    
     
     if request.method == 'POST':
         name=request.form['name']
@@ -209,9 +226,14 @@ def new_playlist():
             session['friendlist_edit'] = name 
             friendlistparser.create_friendlist(name, description, invited_name, invited_mail, session['uid'])
 
-            
+        #when button 'save' is clicked. stores and sends mails
         if not error and form.savefriend.data:
             flash('New friendlist \'' + name + '\' created')
+            #friendlistparser.add_friend(name, invited_name, invited_mail)
+            friends_to_edit, description_to_edit = friendlistparser.ask_friendlist(name, uid)
+            #a = 1/0
+            mailhandler.sendmail(name, description_to_edit, friends_to_edit, uid, imagepath, base_url)
+            form.savefriend.data = [] #otherwise it would flash old message
             return redirect(url_for('profile'))
             
         if not error and form.addfriend.data:
@@ -229,6 +251,7 @@ def add_user():
     
     friendlist_name = session['friendlist_edit']
     uid = session['uid']
+    imagepath = session['image']
     friends_to_edit, description_to_edit = friendlistparser.ask_friendlist(friendlist_name, uid)
     
     givenname_invited = []
@@ -249,6 +272,13 @@ def add_user():
         if not error and form.addfriend.data:
             friendlistparser.add_friend(session['friendlist_edit'], invited_name, invited_mail)
             return redirect(url_for('add_user'))
+            
+        if not error and form.savefriend.data:
+            friendlistparser.add_friend(friendlist_name, invited_name, invited_mail)
+            friends_to_edit, description_to_edit = friendlistparser.ask_friendlist(friendlist_name, uid)
+            mailhandler.sendmail(friendlist_name, description_to_edit, friends_to_edit, uid, imagepath, base_url)
+            form.savefriend.data = [] #otherwise it would flash old message
+            return redirect(url_for('profile'))
  
     return render_template('add_user.html', 
                             form=form,

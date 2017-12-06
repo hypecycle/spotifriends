@@ -27,23 +27,23 @@
 				<tr>
 					<td>
 						
-						<h3>PLEASE, JOIN THE FRIENDLIST {{ friendlist }}</h3>
+						<h3>HI {{ friendrender.upper() }}! PLEASE, JOIN THE FRIENDLIST {{ friendlistrender }}</h3>
 						<p class="lead">You have been invited to the SPOTIFY FRIENDSHIP SAVER APP. 
-						Whatever you are doing together, the app will find and play the music you and your friends will like.</p>
+						Whatever you and your friends are doing together, the app will play the music you will love.</p>
 						
 						<!-- Friendlist -->
 						<table class="social" width="100%">
 							<tr>
-								<td>
+								<td> 
 									
 									<!--- column 1 -->
 									<table align="left" class="column">
 										<tr>
 											<td>				
 												
-												<h5 class="">{{ friendname }}</h5>
+												<h4 class="">{{ friendname }}</h4>
                                                 <p class="small">Invited you and 5 other friends.</p>
-                                                <img src="{{ imagepath }}" />
+                                                <img src="{{ imagepathrender }}" />
                                                 </td>
 
                                             
@@ -56,8 +56,8 @@
 										<tr>
 											<td>				
 																			
-												<h5 class="">{{ friendlist }}</h5>												
-                                                <p class="small">{{ friendlistdescription }}</p>
+												<h4 class="">{{ friendlistrender }}</h4>												
+                                                <p class="small">{{ friendlistdescriptionrender }}</p>
                 
 											</td>
 										</tr>
@@ -73,7 +73,7 @@
 						<!-- Callout Panel -->
 						<p class="callout">
 							Visit the page, log in to spotify and find out which music you and friends are sharing.<br><br>
-							<a class="btn" a href="{{ invitepath }}">Click to join!</a>
+							<a href = "{{ urlrender }}" class="btn">Click Me!</a>
 						</p><!-- /Callout Panel -->
 						
 						<h3>Title Ipsum <small>This is a note.</small></h3>
@@ -81,43 +81,7 @@
 												
 						<br/>
 						<br/>							
-												
-						<!-- social & contact -->
-						<table class="social" width="100%">
-							<tr>
-								<td>
-									
-									<!--- column 1 -->
-									<table align="left" class="column">
-										<tr>
-											<td>				
-												
-												<h5 class="">Connect with Us:</h5>
-												<p class=""><a href="#" class="soc-btn fb">Facebook</a> <a href="#" class="soc-btn tw">Twitter</a> <a href="#" class="soc-btn gp">Google+</a></p>
-						
-												
-											</td>
-										</tr>
-									</table><!-- /column 1 -->	
-									
-									<!--- column 2 -->
-									<table align="left" class="column">
-										<tr>
-											<td>				
-																			
-												<h5 class="">Contact Info:</h5>												
-												<p>Phone: <strong>408.341.0600</strong><br/>
-                Email: <strong><a href="emailto:hseldon@trantor.com">hseldon@trantor.com</a></strong></p>
-                
-											</td>
-										</tr>
-									</table><!-- /column 2 -->
-									
-									<span class="clear"></span>	
-									
-								</td>
-							</tr>
-						</table><!-- /social & contact -->
+											
 					
 					
 					</td>
