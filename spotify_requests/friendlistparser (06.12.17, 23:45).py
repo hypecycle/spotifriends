@@ -28,24 +28,23 @@ def render_list_of_friendlists(uid):
     friendlist_membership = {'HOST': [], 'INVITED': [], 'JOINED': [], 'REJECTED': []} #scheme for db, adding entries
 
     for h in ('HOST', 'INVITED', 'JOINED', 'REJECTED'): #iterating through status
-
         for i in friendlist_database: #iterating through all friendlists
             friendlist_itername = (next(iter(i))) # returns the friendlist names of friendlist_database
-            joined, invited, host = 0,0,0
+
+            invited, joined = 0,0
 
             for j in i.get(friendlist_itername): #iterates through all entries in the user list
 
-                if j.get('status') == "INVITED": invited = invited + 1 #counting invites of actual friendlist
-                if j.get('status') == "JOINED": joined = joined + 1
-                if j.get('status') == "HOST": host = host + 1
+                if j.get('status') == "INVITED": invited =+1 #counting invites of actual friendlist
+                if j.get('status') == "JOINED" or j.get('status') == "HOST": joined =+1
                 
-                if joined == 1: 
+                if invited + joined == 1: 
                     friend_grammar = 'friend'
                 else:
                     friend_grammar = 'friends'
 
                 if j.get('user') == uid and h == j.get('status'): #if the right user and the right status is in the list …
-                    friendlist_membership[h].append({'friendlist': friendlist_itername, 'description': i.get('description'), 'invited': invited, 'joined': joined, 'host': host, 'total': host + joined + invited, 'friend_grammar': friend_grammar})
+                    friendlist_membership[h].append({'friendlist': friendlist_itername, 'description': i.get('description'), 'invited': invited + joined, 'joined': joined, 'friend_grammar': friend_grammar})
 
     return(friendlist_membership)
     

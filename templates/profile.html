@@ -46,17 +46,20 @@
 
 <table class="w3-table">
 <tbody>
+
+    {% if friendlist_render['INVITED'] %}    
 	<tr>
 		<td colspan = "3">
 		<h3>Friendlists you are invited to</h3>
 		</td>
 	</tr>
+	{% endif %}
 {% for i in friendlist_render['INVITED'] %}
 	<tr>
 		<td padding="0">
 			<strong>{{ i.friendlist }}</strong><br>
 			{{ i.description }} <br>
-			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} joined</i></small>
+			<small><i>{{ i.joined }} of {{ i.total }} {{ i.friend_grammar }} joined</i></small>
 		</td>
 		<td> 
 	
@@ -71,19 +74,21 @@
 
 	{% endfor %}
 
-
+{% if friendlist_render['JOINED'] %}    
 	<tr>
 		<td colspan = "3">
 		<h3>Friendlists you joined</h3>
 		</td>
 	</tr>
+{% endif %}
+
 
 {% for i in friendlist_render['JOINED'] %}
 	<tr>
 		<td padding="0">
 			<strong>{{ i.friendlist }}</strong><br>
 			{{ i.description }}<br>
-			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} joined</i></small>
+			<small><i>{{ i.joined }} of {{ i.total }} {{ i.friend_grammar }} joined</i></small>
 		</td>
 		<td> 
 	
@@ -97,19 +102,21 @@
 
 	{% endfor %}
 
-	
+{% if friendlist_render['HOST'] %}    	
 	<tr>
 		<td colspan = "3">
 		<h3>Friendlists you have created</h3>
 		</td>
 	</tr>
+{% endif %}
+
 
 {% for i in friendlist_render['HOST'] %}
 	<tr>
 		<td padding="0">
 			<strong>{{ i.friendlist }}</strong><br>
 			{{ i.description }}<br>
-			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} joined</i></small>
+			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} you invited joined</i></small>
 		</td>
 		<td> 
 	
@@ -125,6 +132,18 @@
 </table>
 </div>
  
+{% if not friendlist_render['INVITED'] and not friendlist_render['JOINED'] and not friendlist_render['HOST'] %}    	
+
+<div class="w3-center w3-padding">
+    <h2 class="w3-animate-bottom">No friendlists available, yet</h2>
+    <p class="w3-large">Don't be sad. Just ask a friend to invite you. Or start you own friendlist. It's easy.</p>
+    <br>
+    <br>
+</div>
+
+{% endif %}
+
+
 <hr>
 
 	

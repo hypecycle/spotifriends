@@ -1,6 +1,7 @@
 '''
     This code was based on these repositories,
     so special thanks to:
+        https://github.com/mari-linhares/spotify-flask
         https://github.com/datademofun/spotify-flask
         https://github.com/drshrey/spotify-flask-auth-example
 
@@ -129,7 +130,7 @@ def profile():
             parsed_name_current_user = responseparser.parse_name_pd(profile_data) #maybe replace with session info
             parsed_image_current_user = responseparser.parse_image_pd(profile_data) #maybe replace with session info
             
-            friendlist_list = friendlistparser.render_list_of_friendlists(friendlist_database, uid)           
+            friendlist_list = friendlistparser.render_list_of_friendlists(uid)           
             
             return render_template("profile.html",
                                     user = profile_data,
@@ -232,7 +233,7 @@ def new_playlist():
             #friendlistparser.add_friend(name, invited_name, invited_mail)
             friends_to_edit, description_to_edit = friendlistparser.ask_friendlist(name, uid)
             #a = 1/0
-            mailhandler.sendmail(name, description_to_edit, friends_to_edit, uid, imagepath, base_url)
+            mailhandler.sendmail(name, description_to_edit, friends_to_edit, session.get('name'), imagepath, base_url)
             form.savefriend.data = [] #otherwise it would flash old message
             return redirect(url_for('profile'))
             
@@ -276,7 +277,7 @@ def add_user():
         if not error and form.savefriend.data:
             friendlistparser.add_friend(friendlist_name, invited_name, invited_mail)
             friends_to_edit, description_to_edit = friendlistparser.ask_friendlist(friendlist_name, uid)
-            mailhandler.sendmail(friendlist_name, description_to_edit, friends_to_edit, uid, imagepath, base_url)
+            mailhandler.sendmail(friendlist_name, description_to_edit, friends_to_edit, session.get('name'), imagepath, base_url)
             form.savefriend.data = [] #otherwise it would flash old message
             return redirect(url_for('profile'))
  
@@ -334,6 +335,7 @@ def dashboard_screen():
         # get profile data
         profile_data = spotify.get_users_profile(auth_header)      
         
+        friendinfo = friendlistparser.render_list_of_friendlists(session['uid'])           
 
         #Loads existing db, builds db, adds user or replaces user 
         database_user = responseparser.load_database('database_user')
@@ -345,7 +347,8 @@ def dashboard_screen():
                                 userimage = session['image'],
                                 username = session['name'],
                                 dictcheck = database_user,
-                                friendlistCheck = friendlist_database)
+                                friendlistCheck = friendlist_database,
+                                friendinfoCheck = friendinfo)
 
     return render_template('dashboard.html')
     

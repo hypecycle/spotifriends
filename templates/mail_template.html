@@ -24,29 +24,43 @@
 
 			<div class="content">
 			<table>
+		
 				<tr>
 					<td>
 						
-						<h3>HI {{ friendrender.upper() }}! PLEASE, JOIN THE FRIENDLIST {{ friendlistrender }}</h3>
-						<p class="lead">You have been invited to the SPOTIFY FRIENDSHIP SAVER APP. 
-						Whatever you and your friends are doing together, the app will play the music you will love.</p>
+						<h3>JOIN THE SPOTIFY FRIENDSHIP SAVER!</h3>
+						<p class="lead">Music is not for fighting. Music is for sharing! 
+						Connect your Spotify with the Friendship saver app and listen to the music, you and all of your friends will love.</p>
 						
 						<!-- Friendlist -->
 						<table class="social" width="100%">
+
 							<tr>
 								<td> 
 									
 									<!--- column 1 -->
 									<table align="left" class="column">
 										<tr>
+			                                <td colspan = "2">
+			                                    <h4>{{ friendnamerender.upper() }} INVITED YOU TO A NEW FRIENDLIST.</h3>
+			                                <td>
+			                            </tr>
+										<tr>
 											<td>				
 												
-												<h4 class="">{{ friendname }}</h4>
-                                                <p class="small">Invited you and 5 other friends.</p>
-                                                <img src="{{ imagepathrender }}" />
-                                                </td>
-
-                                            
+													<p><strong>{{ friendlistrender }}</strong><br>												
+                                                    {{ friendlistdescriptionrender }}</p>
+                                                    
+                                                    {% if friendsrender|length > 1 %}
+                                                        <p class = "small"> Also invited: 
+                                                        {% for friend in friendsrender %}
+                                                            {% if friend.invitemail != tomailrender %}
+                                                                {{ friend.givenname }}, 
+                                                            {% endif %}
+                                                            {{ friend.givenname }} 
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </td>                    
 												
 										</tr>
 									</table><!-- /column 1 -->	
@@ -54,11 +68,8 @@
 									<!--- column 2 -->
 									<table align="left" class="column">
 										<tr>
-											<td>				
-																			
-												<h4 class="">{{ friendlistrender }}</h4>												
-                                                <p class="small">{{ friendlistdescriptionrender }}</p>
-                
+											<td>			
+											    <img src="{{ imagepathrender }}" />	
 											</td>
 										</tr>
 									</table><!-- /column 2 -->
@@ -72,8 +83,10 @@
 
 						<!-- Callout Panel -->
 						<p class="callout">
-							Visit the page, log in to spotify and find out which music you and friends are sharing.<br><br>
-							<a href = "{{ urlrender }}" class="btn">Click Me!</a>
+							Wanna join? Its easy! Just click the link and login to Spotify.<br><br>
+							<a href = "{{ urlrender }}" class="btn">Click Me!</a><br><br>
+						    Or copy this link to the browser: <br>{{ urlrender }}
+					
 						</p><!-- /Callout Panel -->
 						
 						<h3>Title Ipsum <small>This is a note.</small></h3>

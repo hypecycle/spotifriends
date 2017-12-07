@@ -38,7 +38,7 @@ def sendmail(friendlistname, friendlistdescription, friends, friendname, imagepa
     
         msgText = MIMEText('This is a plain text message that will be generated later.')
         msgAlternative.attach(msgText)
-        
+                
         token = friendlistparser.get_token(friendlistname, friend.get('invite_mail'))
         
         url = base + "/profile/invite/" + token 
@@ -49,6 +49,7 @@ def sendmail(friendlistname, friendlistdescription, friends, friendname, imagepa
     
         template = render_template('mail_template.html', 
                         friendlistrender = friendlistname,
+                        friendsrender = friends,
                         friendrender = friend.get('givenname'),
                         friendlistdescriptionrender = friendlistdescription,
                         friendnamerender = friendname, 
