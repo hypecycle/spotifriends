@@ -39,12 +39,15 @@ SPOTIFY_TOKEN_URL = SPOTIFY_AUTH_BASE_URL.format('api/token')
 CLIENT = json.load(open('conf.json', 'r+'))
 CLIENT_ID = CLIENT['id']
 CLIENT_SECRET = CLIENT['secret']
+CLIENT_SIDE_URL = CLIENT['url']
+PORT = CLIENT['port']
+
 
 # server side parameter
 # * fell free to change it if you want to, but make sure to change in
 # your spotify dev account as well *
-CLIENT_SIDE_URL = "http://ddns.buzztelecke.de"
-PORT = 81
+#CLIENT_SIDE_URL = "http://ddns.buzztelecke.de"
+#PORT = 81
 REDIRECT_URI = "{}:{}/callback/".format(CLIENT_SIDE_URL, PORT)
 #REDIRECT_URI = "{}/callback/".format(CLIENT_SIDE_URL)
 SCOPE = "playlist-modify-public playlist-modify-private user-read-recently-played user-top-read"

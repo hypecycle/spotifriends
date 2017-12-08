@@ -13,6 +13,7 @@ from spotify_requests import spotify
 from spotify_requests import responseparser
 from spotify_requests import friendlistparser
 from spotify_requests import mailhandler
+import json
 import logging
 
 
@@ -22,7 +23,12 @@ app.secret_key = 'sPWLUcu}PdumewjNR9LNYn'
 friendList = '' 
 database_user = '' 
 
-base_url = 'http://ddns.buzztelecke.de:81'
+client = json.load(open('conf.json', 'r+'))
+url = client['url']
+port = client['port']
+
+
+base_url = "{}:{}".format(url, port)
 
 
 class FLForm(Form):
