@@ -59,7 +59,7 @@
 		<td padding="0">
 			<strong>{{ i.friendlist }}</strong><br>
 			{{ i.description }} <br>
-			<small><i>{{ i.joined }} of {{ i.total }} {{ i.friend_grammar }} joined</i></small>
+			<small><i>{{ i.JOINED }} of {{ i.TOTAL }} {{ i.friend_grammar }} joined</i></small>
 		</td>
 		<td> 
 	
@@ -88,12 +88,12 @@
 		<td padding="0">
 			<strong>{{ i.friendlist }}</strong><br>
 			{{ i.description }}<br>
-			<small><i>{{ i.joined }} of {{ i.total }} {{ i.friend_grammar }} joined</i></small>
+			<small><i>{{ i.JOINED }} of {{ i.TOTAL }} {{ i.friend_grammar }} joined</i></small>
 		</td>
 		<td> 
 	
 		<td> 
-			  <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-play"></i></a>	
+			  <a class="w3-button w3-circle w3-large w3-black" href= {{ url_for('play_friendlist') }}><i class="fa fa-play"></i></a>	
 		</td>
 		<td>
 			  <a class="w3-button w3-circle w3-large w3-black" href="/profile/reject/{{ user['id'] }}/{{ i.friendlist }}"><i class="fa fa-close"></i></a>			
@@ -116,14 +116,16 @@
 		<td padding="0">
 			<strong>{{ i.friendlist }}</strong><br>
 			{{ i.description }}<br>
-			<small><i>{{ i.joined }} of {{ i.invited }} {{ i.friend_grammar }} you invited joined</i></small>
+			<small><i>{{ i.JOINED }} of {{ i.TOTAL }} {{ i.friend_grammar }} you invited joined</i></small>
 		</td>
 		<td> 
 	
 		<td> 
+		      <a class="w3-button w3-circle w3-large w3-black" href= {{ url_for('play_friendlist') }}><i class="fa fa-play"></i></a>	
+
 		</td>
 		<td>
-			  <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-clock-o"></i></a>			
+			  <!-- <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-clock-o"></i></a> -->	
 		</td>
 	</tr>
 

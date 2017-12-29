@@ -13,6 +13,7 @@ from spotify_requests import spotify
 from spotify_requests import responseparser
 from spotify_requests import friendlistparser
 from spotify_requests import mailhandler
+from spotify_requests import artistparser
 import json
 import logging
 
@@ -92,9 +93,9 @@ def callback():
     #Loads existing db, builds db, adds user or replaces user, builds fake_invite
     database_user, known = responseparser.update_main_user_db(database_current_user)
     
-    if not known:
+    """if not known:
         friendlistparser.auto_invite(session['uid'])
-        logging.info("Auto-invited {}".format(session['uid']))
+        logging.info("Auto-invited {}".format(session['uid']))"""
     
                 
     return profile()
@@ -188,12 +189,53 @@ def reject(friendListPayload, uidPayload):
 
 
 
-@app.route('/testbutton/<payload>')
+@app.route('/play')
 
-def test_button(payload):
+def play_friendlist():
+    if 'auth_header' in session:
+        auth_header = session['auth_header']
+        
+               
+        # get profile data
+        profile_data = spotify.get_users_profile(auth_header) #maybe lose this
+        uid = profile_data.get('id')
+        
+        if valid_token(profile_data):
+            uid = session['uid']
+            
+            parsed_name_current_user = responseparser.parse_name_pd(profile_data) #maybe replace with session info
+            parsed_image_current_user = responseparser.parse_image_pd(profile_data) #maybe replace with session info
+                        
+            return render_template("play_friendlist.html",
+                                    user = profile_data,
+                                    userimage = parsed_image_current_user,
+                                    username = parsed_name_current_user)
+    else:
+        return render_template("play_friendlist.html")
+        
+        
+@app.route('/artistdb')
 
-    return render_template('test_button.html', pay = payload)
-    
+def build_artistdb():
+
+    if 'auth_header' in session:
+        auth_header = session['auth_header']
+        artistparser.build_artist_db(auth_header, 2000)  
+              
+    return redirect(url_for('profile'))
+
+
+@app.route('/genres')
+
+def genre_handling():
+
+    if 'auth_header' in session:
+        auth_header = session['auth_header']
+        artistparser.build_genre_db(auth_header)  
+              
+    return redirect(url_for('profile'))
+  
+
 
 @app.route('/new_playlist', methods=['GET', 'POST'])
 
@@ -207,6 +249,7 @@ def new_playlist():
     givenname_invited = []
     mail_invited = []
     friends_to_edit = []
+    session.pop('_flashes', None)
     
     
     if request.method == 'POST':
@@ -255,6 +298,7 @@ def add_user():
     form = AddForm(request.form)
     logging.info(form.errors)
     error = False
+    session.pop('_flashes', None)
     
     friendlist_name = session['friendlist_edit']
     uid = session['uid']
@@ -354,7 +398,9 @@ def dashboard_screen():
                                 username = session['name'],
                                 dictcheck = database_user,
                                 friendlistCheck = friendlist_database,
-                                friendinfoCheck = friendinfo)
+                                friendinfoCheck = friendinfo,
+                                artistcheck = artistparser.artist_db_overview()
+                                )
 
     return render_template('dashboard.html')
     

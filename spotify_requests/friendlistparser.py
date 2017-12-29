@@ -32,20 +32,27 @@ def render_list_of_friendlists(uid):
         for i in friendlist_database: #iterating through all friendlists
             friendlist_itername = (next(iter(i))) # returns the friendlist names of friendlist_database
             joined, invited, host = 0,0,0
+            
+            #lets count:
+            #a little clumsy
+            if len(i[friendlist_itername]) > 0:
+                for k in range(len(i[friendlist_itername])):
+                    if i[friendlist_itername][k].get('status') == "INVITED": 
+                        invited = invited + 1 #counting invites of actual friendlist
+                    if i[friendlist_itername][k].get('status') == "JOINED": 
+                        joined = joined + 1 #counting invites of actual friendlist
+                    if i[friendlist_itername][k].get('status') == "HOST": 
+                        host = host + 1
+                    
+                    if joined == 1: 
+                        friend_grammar = 'friend'
+                    else:
+                        friend_grammar = 'friends'             
 
-            for j in i.get(friendlist_itername): #iterates through all entries in the user list
-
-                if j.get('status') == "INVITED": invited = invited + 1 #counting invites of actual friendlist
-                if j.get('status') == "JOINED": joined = joined + 1
-                if j.get('status') == "HOST": host = host + 1
-                
-                if joined == 1: 
-                    friend_grammar = 'friend'
-                else:
-                    friend_grammar = 'friends'
+            for j in i.get(friendlist_itername): #iterates through all entries in the user list         
 
                 if j.get('user') == uid and h == j.get('status'): #if the right user and the right status is in the list …
-                    friendlist_membership[h].append({'friendlist': friendlist_itername, 'description': i.get('description'), 'invited': invited, 'joined': joined, 'host': host, 'total': host + joined + invited, 'friend_grammar': friend_grammar})
+                    friendlist_membership[h].append({'friendlist': friendlist_itername, 'description': i.get('description'), 'INVITED': invited, 'JOINED': joined + host, 'HOST': host, 'TOTAL': host + joined + invited, 'friend_grammar': friend_grammar})
 
     return(friendlist_membership)
     
@@ -194,14 +201,16 @@ def resolve_token(token):
 
 def invite_by_token(token, uid):
 
-    """Expects the token and uid. Loads and saves db. If UID is none it just returns the error and doesn't change the db.
-    If uid is set, it changes db values"""
+    """Is called, when user is invited by token.  Expects the token and uid. Loads and saves db.
+    If UID is none it just returns the error and doesn't change the db.
+    If UID is set, it changes db values. Checks that status is INVITED and changes to JOINED. Thus, once the link is found 
+    and changed, the link becomes invalid."""
 
     error = True
 
     friendlist_database = load_update_friendlist_database('database_friendlist')
 
-    for i in range(len(friendlist_database)): #iterating through all friendlists 
+    for i in range(len(friendlist_database)): #iterating through lists in friendlists 
         friendlist_itername = (next(iter(friendlist_database[i]))) # returns the friendlist names of friendlist_database
            
         for j in range(len(friendlist_database[i][friendlist_itername])):
@@ -209,7 +218,7 @@ def invite_by_token(token, uid):
             if friendlist_database[i][friendlist_itername][j].get('token') == token and friendlist_database[i][friendlist_itername][j].get('status') == 'INVITED':
                 if uid:
                     friendlist_database[i][friendlist_itername][j]['user'] = uid
-                    friendlist_database[i][friendlist_itername][j]['status'] = 'INVITED'
+                    friendlist_database[i][friendlist_itername][j]['status'] = 'JOINED'
                 error = False
                 break
 

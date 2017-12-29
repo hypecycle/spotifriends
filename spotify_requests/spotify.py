@@ -14,6 +14,7 @@ import logging
     5. ALBUMS
     6. USERS
     7. TRACKS
+    8. BROWSE (added)
 '''
 # -------------------- Prepare for logging -------------
 
@@ -117,11 +118,6 @@ def authorize(auth_token):
 GET_ARTIST_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'artists')  # /<id>
 
 
-# https://developer.spotify.com/web-api/get-several-artists/
-def get_several_artists(list_of_ids):
-    url = "{}/?ids={ids}".format(GET_ARTIST_ENDPOINT, ids=','.join(list_of_ids))
-    resp = requests.get(url)
-    return resp.json()
 
 # https://developer.spotify.com/web-api/get-artists-albums/
 def get_artists_albums(artist_id):
@@ -136,10 +132,11 @@ def get_artists_top_tracks(artist_id, country='US'):
     resp = requests.get(url, params=myparams)
     return resp.json()
 
+# update mit auth:	
 # https://developer.spotify.com/web-api/get-related-artists/
-def get_related_artists(artist_id):
+def get_related_artists(auth_header, artist_id):
     url = "{}/{id}/related-artists".format(GET_ARTIST_ENDPOINT, id=artist_id)
-    resp = requests.get(url)
+    resp = requests.get(url, headers=auth_header)
     return resp.json()
     
 # update mit auth:
@@ -148,6 +145,15 @@ def track_artist_features(auth_header, artist_id):
 	url = "{}/{id}".format(GET_ARTIST_ENDPOINT, id=artist_id)
 	resp = requests.get(url, headers=auth_header)
 	return resp.json()
+
+# update mit auth:	
+# https://developer.spotify.com/web-api/get-several-artists/
+def get_several_artists(auth_header, list_of_ids):
+    url = "{}/?ids={ids}".format(GET_ARTIST_ENDPOINT, ids=','.join(list_of_ids))
+    resp = requests.get(url, headers=auth_header)
+    return resp.json()
+
+
 
 # ----------------- 3. SEARCH ------------------------
 # https://developer.spotify.com/web-api/search-item/
@@ -273,4 +279,25 @@ def get_several_track_features(auth_header, track_id_list):
     resp = requests.get(url, headers=auth_header)
     return resp.json()
     
+# ---------------- 8. BROWSE ------------------------
+# https://developer.spotify.com/web-api/browse-endpoints/
+##
+
+GET_SEEDS_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'recommendations/available-genre-seeds')
+GET_RECOMM_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'recommendations')  # 
+
+
+def get_recommendation_seeds_genres(auth_header):
+    url = "{}".format(GET_SEEDS_ENDPOINT)
+    resp = requests.get(url, headers=auth_header)
+    return resp.json()
+
+# https://developer.spotify.com/web-api/get-recommendations/
+##
+
+def get_recommendations(auth_header, query):
+    url = "{}?{}".format(GET_RECOMM_ENDPOINT, query)
+    resp = requests.get(url, headers=auth_header)
+    return resp.json()
+
     
