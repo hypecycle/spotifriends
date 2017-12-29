@@ -13,7 +13,7 @@ from spotify_requests import spotify
 from spotify_requests import responseparser
 from spotify_requests import friendlistparser
 from spotify_requests import mailhandler
-from spotify_requests import artistparser
+from spotify_requests import genreparser
 import json
 import logging
 
@@ -220,7 +220,7 @@ def build_artistdb():
 
     if 'auth_header' in session:
         auth_header = session['auth_header']
-        artistparser.build_artist_db(auth_header, 2000)  
+        genreparser.build_artist_db(auth_header, 2000)  
               
     return redirect(url_for('profile'))
 
@@ -231,7 +231,7 @@ def genre_handling():
 
     if 'auth_header' in session:
         auth_header = session['auth_header']
-        artistparser.build_genre_db(auth_header)  
+        genreparser.build_genre_db(auth_header)  
               
     return redirect(url_for('profile'))
   
@@ -399,7 +399,7 @@ def dashboard_screen():
                                 dictcheck = database_user,
                                 friendlistCheck = friendlist_database,
                                 friendinfoCheck = friendinfo,
-                                artistcheck = artistparser.artist_db_overview()
+                                artistcheck = genreparser.artist_db_overview()
                                 )
 
     return render_template('dashboard.html')
