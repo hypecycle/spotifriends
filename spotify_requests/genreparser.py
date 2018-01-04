@@ -1,5 +1,6 @@
 from spotify_requests import spotify, responseparser
 import logging
+import operator
 
 logging.basicConfig(
     filename="aristparser.log",
@@ -14,7 +15,8 @@ artists_to_parse = ['14SgKNlOCKAI0PfRD1HnWh', '7qXzy6c5RWT0XlVQcOBIDG', '6g0mn3t
 
         
 def build_artist_db(auth_header, db_size):
-    """Asks spotify for related artists from to-do-list. Stores to database database_artists.pickle"""
+    """Asks spotify for related artists from to-do-list. Stores to database database_artists.pickle
+    Finds just 530 genres / 1000 datasets. Maybe combine with build genre_db"""
     
     min_popularity = 20 #if nobody knows, ignore
     
@@ -41,7 +43,7 @@ def build_artist_db(auth_header, db_size):
                     doubleflag = True 
                     
             #if doubleflag:
-                #logging.info("artistparser: {} flagged as double".format(artist.get('id')))
+                #logging.info("genreparser: {} flagged as double".format(artist.get('id')))
 
             if artist.get('popularity') > min_popularity and not doubleflag:
                 a_related.append(artist.get('id'))
@@ -60,7 +62,7 @@ def build_artist_db(auth_header, db_size):
                          
     responseparser.save_database('database_artists', artist_db)
     responseparser.save_database('database_artists_to_parse', a_to_parse)    
-    logging.info("artistparser: {} artists saved to db".format(len(artist_db)))
+    logging.info("genreparser: {} artists saved to db".format(len(artist_db)))
       
     return
                 
@@ -73,29 +75,47 @@ def artist_db_overview():
     
     for artist in artist_db:
         itername = next (iter (artist))
-        response = response + artist.get(itername).get('artistname') + " (" + itername +"), "
-        #response = response + artist.get(itername).get('artistname') + ", " 
+        #response = response + artist.get(itername).get('artistname') + " (" + itername +"), "
+        response = response + artist.get(itername).get('artistname') + ", " 
     
     
     return response
+    
+def count_list(raw_list):
+    """expects a list of multiple keywords. returns a dict with:
+    'keyword': number_off_occurances """
+    
+    count_dict = {}
+    
+    for item in raw_list:
+        if item in count_dict:
+            count_dict[item] += 1
+        else:
+            count_dict[item] = 1
+            
+    return count_dict
 
 
 def build_genre_db(auth_header):
 
     """Asks spotify for a list of valid genres for recommendations. 
     Queries artist recommendations for each supergenre. 
-    Counts and weighs artist subgenres."""
+    Builds a dict with 'supergenre': ['list of subgenres']
+    Counts and weighs artist subgenres. Not called regularly just 
+    for upadates. Set is rather small. covers 730 subgenres"""
     
     #query_base serves as prefs for query
     #limit: min 1, default 20, max = 100
     query_base = {
             'min_popularity': 50,
-            'limit': 50
+            'limit': 95
             }
             
     query_base_str = ''
+    supergenres = {}
     
     #build query for spotify api endpoint
+    #try ','.join(item) latrr
     for item in query_base:
 	    query_base_str += (item + '=' + str(query_base.get(item))+ '&')
 
@@ -105,7 +125,10 @@ def build_genre_db(auth_header):
     response = spotify.get_recommendation_seeds_genres(auth_header).get('genres')
     
     for genre in response:
+
+        logging.info("genreparser: query for {} started".format(genre))
     
+        #a_id_list = whole list, a_query = chopped in pieces 0f 50ies
         a_id_list = []
        
         compl_query = "{}&seed_genres={}".format(query_base_str, genre)   
@@ -114,26 +137,97 @@ def build_genre_db(auth_header):
         
         for i in range(len(recommendation.get('tracks'))):
             #add ids from response to list
-            id = recommendation.get('tracks')[i].get('album').get('id')
+            #a little lazy. 'artists' is a list of several artists. 
+            #just referencing first in list
+            #Maybe just loop over this ?!?!?!
+            id = recommendation.get('tracks')[i].get('album').get('artists')[0].get('id')
             a_id_list.append(id)
         
         a_id_pointer = 0
+        subgenres = []
         
         #handles queries with more than 50 items and chops them in pcs      
         while len(a_id_list) - a_id_pointer > 0:
-            a_query = ''
+            a_query = []
             
-            for i in range(a_id_pointer, a_id_pointer + (len(a_id_list) - a_id_pointer)):
-                a_query += a_id_list[i]+','
-                
-            a_query = a_query[:-1]
+            #get_several_artists expects a list, no str
+            for i in range(a_id_pointer, a_id_pointer + 50 if a_id_pointer + 50 <= len(a_id_list) else len(a_id_list)):
+                a_query.append(a_id_list[i])
+            
             a_id_pointer += 50
             
             #queries lists of artist ids. Gets info (including subgenres) in return
-            artists = get_several_artists(auth_header, list_of_ids) 
+            artists = spotify.get_several_artists(auth_header, a_query).get('artists')
             
-        1/0
+            for i in range(len(artists)):
+                subgenres.extend(artists[i].get('genres'))
+
+        logging.info("genreparser: query for {} returned {} subgenres".format(genre, len(subgenres)))
+        
+        #returns a dict with ('key': number of occurances)
+        subgenres_ct = count_list(subgenres)
+        
+        supergenres[genre] = subgenres_ct
+
+    responseparser.save_database('database_supergenres', supergenres)
+    logging.info("genreparser: {} supergenres saved to tb".format(len(supergenres)))
+    
+    1/0
         
     return
         
-        
+ 
+def count_genres(database_current_user):
+
+    """receives current user data and returns the genre-count to each user
+    Format: {'subgenre1': occurance, ' sg2': occurances …}"""
+
+    genrecount = {}
+    
+    genrecount_user = {}
+    
+    user_itername = (next(iter(database_current_user)))
+    for tracklist in database_current_user.get(user_itername).get('tracks'):
+        for genre in tracklist.get('genres'):               
+
+            if genre in genrecount_user:
+                genrecount_user[genre] += 1
+            else:
+                genrecount_user[genre] = 1
+
+    return genrecount_user    
+    
+
+def find_genre_weight(genre_test, top_genres):
+
+    """Find the x best supergenres to fit a users list of subgenres.
+    Considerers strong preferrences of a user for certain subgenres. 
+    Expects the current user db and number of supergenres to be returned. 
+    returns supergenres"""    
+    
+    #load database that gives a dict of subgenres for each supergenre
+    #generated frome time to time in function genreparser.build_genre_db
+    genre_db = responseparser.load_database('database_supergenres')  
+    user_itername = (next(iter(genre_test)))
+    genre_dict = {}
+
+    
+    for genre_item_test in genre_test.get(user_itername).get('genres'):
+        for supergenre in genre_db:
+            for subgenre in genre_db.get(supergenre):
+                if genre_item_test in subgenre: #match of subgenres in test and db
+                    if supergenre in genre_dict:
+                        genre_dict[supergenre] += genre_db.get(supergenre).get(subgenre) * genre_test.get(next(iter(genre_test))).get('genres').get(genre_item_test)
+                    else: #empty
+                        genre_dict[supergenre] = genre_db.get(supergenre).get(subgenre) * genre_test.get(next(iter(genre_test))).get('genres').get(genre_item_test)
+
+    genres_sorted = sorted(genre_dict.items(), key=operator.itemgetter(1))
+    genres_sorted.reverse()
+    
+    supergenres_top = []
+
+    for key, val in genres_sorted[:top_genres]:
+        supergenres_top.append(key)
+
+    return supergenres_top
+   

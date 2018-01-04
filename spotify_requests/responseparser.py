@@ -1,6 +1,6 @@
 import string
 #import random
-from spotify_requests import spotify, friendlistparser
+from spotify_requests import spotify, friendlistparser, genreparser
 import logging
 import datetime
 import pickle
@@ -147,13 +147,12 @@ def get_user_data(auth_header, profile_data):
     
     track_artist_features = get_artist_list_slow(auth_header, top_track_dict)
     logging.info("Track artist features retrieved")
-
     
     merged_tracklist = merge_several_tracks_artists(several_track_features.get('audio_features'), track_artist_features, top_track_dict)
     database = format_uid_entry(uid, profile_dict, merged_tracklist)
 
-
     return database, uid
+
 
 def load_database(fileName):
 
@@ -193,8 +192,7 @@ def save_database(fileName, database):
 def update_main_user_db(database_current_user):
 
     """ Loads database 'database_user'. Does all the magic. If database_user is empty or uid not present: 
-    appends database_current_user. If user present: Updates info in database. Two methods in test_dict9 on MacBook
-    friend_list is needed for auto_invite until real invite is set. returns the updated
+    appends database_current_user. If user present: Updates info in database. returns the updated
     db and a change flag True."""
     
     #loads database up to now. Passes to var
@@ -206,8 +204,23 @@ def update_main_user_db(database_current_user):
     #Gets toggled, when the user-uid was found and current user added. 
     known_user = False 
     
-    #Remains false, when key not found due to empty database or new user
+    #----------- Statistics for genres, music features etc. goes here ---------------
+    # database_current_user[0] contains a dict in the expected form
+    # 'uid': {'display_name', name, … 'imageurl': url, tracks: [['trackname': name, ... 'genres': ['1', '2', ]
     
+    #counts the genres of all tracks and adds them to the database_current_user
+    #adds 'genres:{'subgenre1': occurance, ' sg2': occurances …}
+    uid = next(iter(database_current_user[0]))
+    
+    database_current_user[0][uid]['genres'] = {}
+    database_current_user[0][uid]['genres'] = (genreparser.count_genres(database_current_user[0]))
+    
+    #takes the genres count, compares it to the genre_db and finds the x best supergenres
+    #returns a list with the key 'supergenres'
+    database_current_user[0][uid]['supergenres'] = {}
+    database_current_user[0][uid]['supergenres'] = genreparser.find_genre_weight(database_current_user[0], 3)
+     
+    #Remains false, when key not found due to empty database or new user    
     for i in database_user_before:
     
         #iteration uid equals current user uid
@@ -227,9 +240,6 @@ def update_main_user_db(database_current_user):
     if not known_user:
         database_user_new.append(database_current_user[0])
         logging.info("User {} not found updating user db. Appended".format(next (iter (database_current_user[0]))))
-
-        '''###find clever way to pass auto-invite        
-        friendlistparser.auto_invite(database_current_user[0]) #calls friendlist-function that updates and saves the db'''
         
     save_database('database_user', database_user_new)
     
