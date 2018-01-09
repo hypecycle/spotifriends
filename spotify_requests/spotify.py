@@ -299,5 +299,21 @@ def get_recommendations(auth_header, query):
     url = "{}?{}".format(GET_RECOMM_ENDPOINT, query)
     resp = requests.get(url, headers=auth_header)
     return resp.json()
+    
+# ---------------- 9. PLAYLISTS ------------------------
+# https://developer.spotify.com/web-api/working-with-playlists/
+# https://developer.spotify.com/web-api/playlist-endpoints/
+##
+
+CREATE_PLAYLIST_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'users')
+
+# https://developer.spotify.com/web-api/create-playlist/
+
+def create_playlist(auth_header, uid, query):
+    url = "{}/{}/playlists".format(CREATE_PLAYLIST_ENDPOINT, uid)
+    resp = requests.post(url, headers=auth_header, data=query)
+
+    return resp.status_code, resp.json(), 
+
 
     

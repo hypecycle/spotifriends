@@ -225,6 +225,8 @@ def find_genre_weight(genre_test, top_genres):
     genres_sorted.reverse()
     
     supergenres_top = []
+    
+    logging.info('genreparser: identified supergenres {}'.format(genres_sorted))
 
     for key, val in genres_sorted[:top_genres]:
         supergenres_top.append(key)

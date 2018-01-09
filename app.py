@@ -90,7 +90,7 @@ def callback():
     session['name'] = responseparser.parse_name_pd(profile_data) #new method
     session['image'] = responseparser.parse_image_pd(profile_data) #new method
             
-    #Loads existing db, builds db, adds user or replaces user, builds fake_invite
+    #Loads existing db, builds db, adds user or replaces user
     database_user, known = responseparser.update_main_user_db(database_current_user)
     
     """if not known:
@@ -240,6 +240,11 @@ def genre_handling():
 @app.route('/new_playlist', methods=['GET', 'POST'])
 
 def new_playlist():
+    """Calls form and asks input for the creation of the database.
+    In this function the friandlist as a database entry is initially built.
+    Adding new friend happens in the 'add_user' route and function.
+    
+    """
 
     form = FLForm(request.form)
     logging.info(form.errors)
@@ -276,7 +281,8 @@ def new_playlist():
             session['friendlist_edit'] = name 
             friendlistparser.create_friendlist(name, description, invited_name, invited_mail, session['uid'])
 
-        #when button 'save' is clicked. stores and sends mails
+        # Runs when button 'save' is clicked. 
+        # Stores and sends mails.
         if not error and form.savefriend.data:
             flash('New friendlist \'' + name + '\' created')
             #friendlistparser.add_friend(name, invited_name, invited_mail)
@@ -371,8 +377,9 @@ def intro_screen():
                             message2 = message2_text)
                             
 @app.route("/lose_auth")
+# Try: "https://accounts.spotify.com/de/logout"
 def lose_auth():
-    session.clear() #not really working
+    session.clear() 
     logging.info("deleting auth info")
     return redirect(url_for('intro_screen'))
     
@@ -386,6 +393,9 @@ def dashboard_screen():
         profile_data = spotify.get_users_profile(auth_header)      
         
         friendinfo = friendlistparser.render_list_of_friendlists(session['uid'])           
+        
+        #--------------- temp -----------------------
+        friendlistparser.create_playlist(auth_header, profile_data.get('id'), 'Simple list', 'Sounds of sillyness')
 
         #Loads existing db, builds db, adds user or replaces user 
         database_user = responseparser.load_database('database_user')

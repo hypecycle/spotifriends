@@ -4,6 +4,7 @@ import pickle
 import string
 import random
 from spotify_requests import responseparser
+from spotify_requests import spotify
 
 
 logging.basicConfig(
@@ -245,7 +246,9 @@ def check_friendlist(searchterm):
 
 def create_friendlist(friendlist_name, friendlist_description, givenname_invited, mail_invited, host_uid):
 
-    """adds friendlist, host and a first friend to the friendlist"""
+    """adds friendlist, host and a first friend to the friendlist
+    Creates list of dicts for host (‚status‘ = ‚HOST‘) and first user 
+    (‚status‘ = ‚INVITED‘). Adds them to the database_friendlist."""
     
     friendlist_database = load_update_friendlist_database('database_friendlist')
     
@@ -281,7 +284,6 @@ def ask_friendlist(friendlist_name, uid):
     return friends_to_edit, description_to_edit
     
 def add_friend(friendlist_name, givenname_invited, mail_invited):
-
     """takes friendlist name, a givenname, a mail and creates a new friend for this user, the saves the updated list """
 
     friendlist_database = load_update_friendlist_database('database_friendlist')
@@ -311,4 +313,54 @@ def get_token(friendlist_name, mail_invited):
                     
     return token
                     
+#nowhere called, yet!                    
+def create_playlist(auth_header, uid, friendlist_name, friendlist_descr):
+        
+        """Builds the playlist in the current user's account. Expects auth-header, uid,
+        friendlist_name = playlist_name, friendlist_descr = playlist_descr
+        Receives playlist-info and saves it to 
+        [{friendlist: {'user': UID, 'snapshot': playlist_sh, 'href': url, 
+        'id': id,}
+        Test: frl_db[4].get('Where the streets have no name')[0].get('user') works
+        !!!!!Make sure that it is called just once (after accepted invite) !!! Or check if id is already present and chose update!!!!
+        """
+
+        name = friendlist_name
+        description = friendlist_descr
+        collaborative = 'false' #small caps
+        public = 'false'
+        
+        friendlist_database = load_update_friendlist_database('database_friendlist')
+        
+        query = "{\"name\":\"" + name + "\", \"description\":\"" + description + "\", \"collaborative\":" + collaborative + ", \"public\":" + public + "}"
+        
+        uid = '1121800629'
+                
+        status, response = spotify.create_playlist(auth_header, uid, query)
+        
+        1/0
+        
+        if status == 200 or status == 201: #bueno
+        
+            for i in range (0, len(friendlist_database)): #iterating through lists in friendlist_databse 
+                friendlist_itername = (next(iter(friendlist_database[i]))) # returns  name the current friendlist
+                
+                if friendlist_name in friendlist_database[i]:
+                    friendlist_content = friendlist_database[i].get(friendlist_name)
                     
+                    for j in range(len(friendlist_content)):
+                        if friendlist_content[j].get('user') == uid: #check if already created "and not friendlist_database[i].get(friendlist_itername)[j].get('playlist_id'):" 
+                            friendlist_database[i][friendlist_itername][j]['snapshot_id'] = response.get('snapshot_id')
+                            friendlist_database[i][friendlist_itername][j]['playlist_url'] = response.get('external_urls').get('spotify')
+                            friendlist_database[i][friendlist_itername][j]['playlist_id'] = response.get('id')
+                            logging.info('friendlisparser: Playlist {} for {} created. Snapshot {}, id {}, status {}'.format(friendlist_name, uid, response.get('snapshot_id'), response.get('id'), status))
+                        else:
+                            logging.info('friendlisparser ERROR: Updating playlist db {} for {} failed.'.format(friendlist_name, uid))
+                        
+
+        else:
+            logging.info('friendlisparser ERROR: Creating playlist {} for {} failed. status {}'.format(friendlist_name, uid, status))
+                
+        save_friendlist_database(friendlist_database, 'database_friendlist')           
+        
+        return
