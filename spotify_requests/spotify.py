@@ -15,6 +15,7 @@ import logging
     6. USERS
     7. TRACKS
     8. BROWSE (added)
+    9. PLAYLISTS (added)
 '''
 # -------------------- Prepare for logging -------------
 
@@ -51,7 +52,7 @@ PORT = CLIENT['port']
 #PORT = 81
 REDIRECT_URI = "{}:{}/callback/".format(CLIENT_SIDE_URL, PORT)
 #REDIRECT_URI = "{}/callback/".format(CLIENT_SIDE_URL)
-SCOPE = "playlist-modify-public playlist-modify-private user-read-recently-played user-top-read"
+SCOPE = "playlist-modify-public playlist-modify-private user-read-recently-played user-top-read playlist-read-private playlist-read-collaborative"
 STATE = ""
 SHOW_DIALOG_bool = True
 SHOW_DIALOG_str = str(SHOW_DIALOG_bool).lower()
@@ -200,19 +201,26 @@ def get_users_playlists(auth_header):
 
 
 # https://developer.spotify.com/web-api/get-users-top-artists-and-tracks/
-# l z. Zt. auf 50 limitiert
-# Betrachtungszeitraum kann auch gesetzt werden
-def get_users_top(auth_header, t, l):
+# Limited to 50 tracks. Added offset as an extra argument (default = 0)
+# If you set offset to 49, call will return tracks 49 to 99
+# Supposed to work calling 3 args and 4 args
+
+def get_users_top(auth_header, t, l, offs = 0):
     if t not in ['artists', 'tracks']:
         print('invalid type')
         return None
-    url = "{}/{type}?limit={limit}".format(USER_TOP_ARTISTS_AND_TRACKS_ENDPOINT, type=t, limit=l)
+    url = "{}/{type}?limit={limit}&offset={offset}".format(USER_TOP_ARTISTS_AND_TRACKS_ENDPOINT, 
+                                                           type=t, limit=l, offset = offs)
     resp = requests.get(url, headers=auth_header)
     return resp.json()
 
 # https://developer.spotify.com/web-api/web-api-personalization-endpoints/get-recently-played/
-def get_users_recently_played(auth_header):
-    url = USER_RECENTLY_PLAYED_ENDPOINT
+# ?type=track&limit=50
+
+def get_users_recently_played(auth_header, t = 'track', l = 50):
+    url = "{}?type={type}&limit={limit}".format(USER_RECENTLY_PLAYED_ENDPOINT,
+                                                           type=t, limit=l,
+                                                           ) 
     resp = requests.get(url, headers=auth_header)
     return resp.json()
 
@@ -279,6 +287,14 @@ def get_several_track_features(auth_header, track_id_list):
     resp = requests.get(url, headers=auth_header)
     return resp.json()
     
+# https://developer.spotify.com/web-api/get-several-tracks/
+##
+    
+def get_several_tracks(auth_header, track_id_list):
+    url = "{}/?ids={idlist}".format(GET_TRACK_ENDPOINT, idlist = track_id_list)
+    resp = requests.get(url, headers=auth_header)
+    return resp.json()
+    
 # ---------------- 8. BROWSE ------------------------
 # https://developer.spotify.com/web-api/browse-endpoints/
 ##
@@ -306,14 +322,35 @@ def get_recommendations(auth_header, query):
 ##
 
 CREATE_PLAYLIST_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'users')
+GET_PLAYLIST_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'users')
+GET_PLAYLIST_TRACK_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'users')
 
 # https://developer.spotify.com/web-api/create-playlist/
+##
 
 def create_playlist(auth_header, uid, query):
     url = "{}/{}/playlists".format(CREATE_PLAYLIST_ENDPOINT, uid)
     resp = requests.post(url, headers=auth_header, data=query)
 
     return resp.status_code, resp.json(), 
+    
 
+# https://developer.spotify.com/web-api/console/get-playlists/
+##
+
+def get_list_of_users_playlists(auth_header, uid, l, o):
+    url = "{}/{}/playlists?limit={}&offset={}".format(GET_PLAYLIST_ENDPOINT, uid, l, o)
+    resp = requests.get(url, headers=auth_header)
+    return resp.json()
+    
+# https://developer.spotify.com/web-api/get-playlists-tracks/
+# https://api.spotify.com/v1/users/{user_id}/playlists/{playlist_id}/tracks
+##
+
+def get_playlist_tracks(auth_header, uid, playlId, l = 100, o = 0):
+    url = "{}/{}/playlists/{}/tracks?limit={}&offset={}".format(GET_PLAYLIST_TRACK_ENDPOINT, uid, playlId, l, o)
+    resp = requests.get(url, headers=auth_header)
+    return resp.json()
+    
 
     

@@ -334,7 +334,7 @@ def create_playlist(auth_header, uid, friendlist_name, friendlist_descr):
         
         query = "{\"name\":\"" + name + "\", \"description\":\"" + description + "\", \"collaborative\":" + collaborative + ", \"public\":" + public + "}"
         
-        uid = '1121800629'
+        uid = 'ohrtwinrunde'
                 
         status, response = spotify.create_playlist(auth_header, uid, query)
         

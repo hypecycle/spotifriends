@@ -14,6 +14,7 @@ from spotify_requests import responseparser
 from spotify_requests import friendlistparser
 from spotify_requests import mailhandler
 from spotify_requests import genreparser
+from handlers import tracks
 import json
 import logging
 
@@ -67,6 +68,8 @@ def auth():
 @app.route("/callback/")
 def callback():
 
+    logging.info("Callback entered for {}".format(session['uid']))
+
     auth_token = request.args['code']
     auth_header = spotify.authorize(auth_token)
     session['auth_header'] = auth_header
@@ -76,14 +79,27 @@ def callback():
     #uid = profile_data.get('id')
     
     
-    #------- new login? Resets database_current_user, uid, database_user
     #getting user data, parse and save it
     #Requests all data from spotify and forms a dict
+    #OLD CALL
     database_current_user, uid = responseparser.get_user_data(auth_header, profile_data)
     session['uid'] = uid
     
-    logging.info("Callback entered for {}".format(session['uid']))
+    #------------------ NEW CALL: Builds a tracklist ---------------------
     
+    logging.info('app: Building currUsrTracks')    
+    currUsrTracks = []
+
+    currUsrTracks.append(tracks.get_top_tracks(auth_header)[0])
+    logging.info("app: got Top Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
+
+    currUsrTracks += tracks.get_recent_tracks(auth_header)[0]
+    logging.info("app: got Recent Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
+    
+    currUsrPlaylistsTemp = tracks.get_tracks_in_playlists(auth_header, uid)
+    logging.info("app: got Playlist Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
+
+      
     #writing crucial data do session to make it available everywhere
     #session['name'] = responseparser.parse_name(database_current_user)
     #session['image'] = responseparser.parse_image(database_current_user)
@@ -122,6 +138,9 @@ def profile():
         profile_data = spotify.get_users_profile(auth_header) #maybe lose this
         uid = profile_data.get('id')
         
+        # Checks for 'new token' stored in session variable
+        # Is assigned by invite function
+        # If present, this is the first run after invite
         if valid_token(profile_data):
             uid = session['uid']
             new_token = session.get('new_token')
@@ -395,7 +414,7 @@ def dashboard_screen():
         friendinfo = friendlistparser.render_list_of_friendlists(session['uid'])           
         
         #--------------- temp -----------------------
-        friendlistparser.create_playlist(auth_header, profile_data.get('id'), 'Simple list', 'Sounds of sillyness')
+        #friendlistparser.create_playlist(auth_header, profile_data.get('id'), 'Simple list', 'Sounds of sillyness')
 
         #Loads existing db, builds db, adds user or replaces user 
         database_user = responseparser.load_database('database_user')
