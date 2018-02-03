@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="w3-responsive w3-padding">
+
+
+<h3>Songs you have in common</h3>
+
+
+{% if found|length == 0 %}  
+
+<strong>Sorry, no tracks found</strong>
+<br><br><br>
+
+
+{% else %}
+
+<table class="w3-table">  
+<tbody>
+
+{% for track in found %}
+
+	<tr>
+		<td>
+			<strong>{{ track.trackname }}</strong><br>
+		</td>
+	
+		<td> 
+			{{ track.cumulated_name }} <br>
+		</td>
+	</tr>
+
+
+{% endfor %}
+</tbody>
+</table>
+
+{% endif %}
+
+
+<h3>Artists you have in common</h3>
+
+
+{% if artistFound|length == 0 %}  
+
+<strong>Uhoh, no artists found</strong>
+<br><br><br>
+
+
+{% else %}
+
+<table class="w3-table">  
+<tbody>
+
+{% for artist in artistFound %}
+
+	<tr>
+		<td>
+			<strong>{{ artist.artistname }}</strong><br>
+		</td>
+	
+		<td> 
+			{{ artist.cumulated_name }} <br>
+		</td>
+	</tr>
+
+
+{% endfor %}
+</tbody>
+</table>
+
+{% endif %}
+
+
+
+<br><br>
+	<div class="w3-center w3-padding">
+		<a href= "/profile"><button class="w3-btn w3-xlarge w3-dark-grey w3-hover-light-grey" onclick="document.getElementById('id01').style.display='block'" style="font-weight:900;">Return</button></a>
+	</div>
+
+{% endblock %}

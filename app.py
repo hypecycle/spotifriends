@@ -15,6 +15,8 @@ from spotify_requests import friendlistparser
 from spotify_requests import mailhandler
 from spotify_requests import genreparser
 from handlers import tracks
+from handlers import databases
+from handlers import friendlists
 import json
 import logging
 
@@ -31,6 +33,12 @@ port = client['port']
 
 
 base_url = "{}:{}".format(url, port)
+
+# If set to True, the trackloading routine will only be entered if …
+# the user is new (not in the user database) or
+# the user's last loging is 24 hours or longer ago
+LAZY_TRACKLOADING = True
+
 
 
 class FLForm(Form):
@@ -68,50 +76,42 @@ def auth():
 @app.route("/callback/")
 def callback():
 
-    logging.info("Callback entered for {}".format(session['uid']))
 
     auth_token = request.args['code']
     auth_header = spotify.authorize(auth_token)
     session['auth_header'] = auth_header
     
-    #get profile_data first – basic for spotify call
-    profile_data = spotify.get_users_profile(auth_header)
-    #uid = profile_data.get('id')
-    
-    
-    #getting user data, parse and save it
-    #Requests all data from spotify and forms a dict
-    #OLD CALL
-    database_current_user, uid = responseparser.get_user_data(auth_header, profile_data)
-    session['uid'] = uid
-    
-    #------------------ NEW CALL: Builds a tracklist ---------------------
-    
-    logging.info('app: Building currUsrTracks')    
-    currUsrTracks = []
+    #get profileData first – basic for spotify call
+    profileData = spotify.get_users_profile(auth_header)
+    uid = profileData.get('id')
 
-    currUsrTracks.append(tracks.get_top_tracks(auth_header)[0])
-    logging.info("app: got Top Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
-
-    currUsrTracks += tracks.get_recent_tracks(auth_header)[0]
-    logging.info("app: got Recent Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
+    logging.info("Callback entered for {}".format(uid))
     
-    currUsrPlaylistsTemp = tracks.get_tracks_in_playlists(auth_header, uid)
-    logging.info("app: got Playlist Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
-
-      
     #writing crucial data do session to make it available everywhere
-    #session['name'] = responseparser.parse_name(database_current_user)
-    #session['image'] = responseparser.parse_image(database_current_user)
-    session['name'] = responseparser.parse_name_pd(profile_data) #new method
-    session['image'] = responseparser.parse_image_pd(profile_data) #new method
-            
-    #Loads existing db, builds db, adds user or replaces user
-    database_user, known = responseparser.update_main_user_db(database_current_user)
+    session['uid'] = uid
+    session['name'] = responseparser.parse_name_pd(profileData) #new method
+    session['image'] = responseparser.parse_image_pd(profileData) #new method
+
+        
+    #------------------ NEW CALL: Builds a tracklist ---------------------
+
+    if databases.fetchData(uid) is True or LAZY_TRACKLOADING is False:
     
-    """if not known:
-        friendlistparser.auto_invite(session['uid'])
-        logging.info("Auto-invited {}".format(session['uid']))"""
+	    logging.info('app: Building currUsrTracks')    
+
+	    currUsrTracks = tracks.get_top_tracks(auth_header)
+	    logging.info("app: got Top Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
+
+	    currUsrTracks += tracks.get_recent_tracks(auth_header)
+	    logging.info("app: got Recent Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
+	    
+	    currUsrTracks += tracks.get_tracks_in_playlists(auth_header, uid)
+	    logging.info("app: got Playlist Tracks, {} in currUsrTracks".format(len(currUsrTracks)))
+
+	    currUsrData = databases.buildUsrData(profileData, currUsrTracks)
+	                   
+	    #Loads existing db, builds db, adds user or replaces user
+	    knownUser = databases.update_userDB(currUsrData, uid)
     
                 
     return profile()
@@ -205,6 +205,27 @@ def reject(friendListPayload, uidPayload):
     friendlist_database_new = friendlistparser.update_friendlist(friendlistparser.load_update_friendlist_database('database_friendlist'), friendListPayload, uidPayload, 'REJECTED')
     friendlistparser.save_friendlist_database(friendlist_database_new, 'database_friendlist')
     return redirect(url_for('profile'))
+
+
+@app.route('/profile/friendlist/<uidPayload>/<friendListPayload>')
+
+def view_friendlist(friendListPayload, uidPayload):
+    if 'auth_header' in session:
+        auth_header = session['auth_header']
+        
+               
+        # get profile data
+        profile_data = spotify.get_users_profile(auth_header) #maybe lose this
+        uid = profile_data.get('id')
+        
+        foundTrackList, foundArtistList = friendlists.find_common_songs(friendListPayload)
+                        
+        return render_template("shared.html",
+                                found = foundTrackList,
+                                artistFound = foundArtistList
+                                )
+    else:
+        return render_template("shared.html")
 
 
 
@@ -428,7 +449,6 @@ def dashboard_screen():
                                 dictcheck = database_user,
                                 friendlistCheck = friendlist_database,
                                 friendinfoCheck = friendinfo,
-                                artistcheck = genreparser.artist_db_overview()
                                 )
 
     return render_template('dashboard.html')

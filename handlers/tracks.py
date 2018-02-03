@@ -11,6 +11,8 @@ logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(message)s"
     )
 
+# True to get a detailed log
+PLAYLIST_DETAIL = True
 
 def get_top_tracks(auth_header):
     """Pulls the list of the top 50 songs from spotify. The call is limited to 50 items.
@@ -39,30 +41,39 @@ def get_recent_tracks(auth_header):
     
 def get_tracks_in_playlists(auth_header, uid):
     """Kindly asks for the total number of all playlists: playlTotal 
-    https://developer.spotify.com/web-api/get-a-list-of-current-users-playlists/
     Then loops over dataset in steps of 50ies until offset + limit 
     exceeds playlTotal. Then cuts down the limit to get the remaining playlists.
-    Parses a list of IDs out of the returned data fo every list that has no 
-    'local' = True key (these are iTunes generated.
+    Parses a list of IDs out of the returned data for every list that is not 
+    'images' = []. (This is a reliable marker for playlists that don't return tracks, 
+    e.g. being imported from iTunes). Then loads track info for track ID's
     """
     
-    # ----- Getting the total number of users playlists ----------
+    if PLAYLIST_DETAIL is True:
+        logging.info("tracks: get_tracks_in_playlists entered")
+    
+    # -------- Getting the total number of users playlists ----------
     playlTotal = spotify.get_list_of_users_playlists(auth_header, uid, 1, 0).get('total')
     usrPlayl = []
     
     limit = 50
     offset = 0
     
-    # -------- Looping until every playlists is requested ----------
-    while offset < playlTotal:            
-        usrPlayl += spotify.get_list_of_users_playlists(auth_header, 
-                                                        uid, limit, offset).get('items')
+    # ------------ Getting playlists as IDs -----------------
+    while offset < playlTotal:
+        usrPlayl += spotify.get_list_of_users_playlists(auth_header, uid, limit, offset).get('items')
         offset += limit
-
+               
     usrPlaylIDs = parse_user_playlist_ids(usrPlayl)
     usrPlaylTrack =[]
+    usrPlaylTrackFAILED = []
+
+    if PLAYLIST_DETAIL is True:
+        logging.info("tracks: {} playlists returned".format(playlTotal))
+        logging.info("tracks: playlist id's: {} ".format(usrPlaylIDs))
+
     
-    #  ----- Takes the list of IDs, loops over it and asks titles ------
+    #  ----- Takes the list of IDs, loops over it and asks for tracks in each list ------
+    
     for ID in usrPlaylIDs:
         trackList = spotify.get_playlist_tracks(auth_header, uid, ID).get('items')
         if trackList:
@@ -70,11 +81,23 @@ def get_tracks_in_playlists(auth_header, uid):
                 trackID = trackList[i].get('track').get('id')
                 if trackID:
                     usrPlaylTrack.append(trackID)
+                else:
+                    usrPlaylTrackFAILED.append(ID)
+
+            if PLAYLIST_DETAIL is True:
+                logging.info("tracks: {} tracks for playlist {} returned"
+                             .format(len(trackList), ID))
+
+    if PLAYLIST_DETAIL is True:
+        logging.info("tracks: {} tracks received as ID".format(len(usrPlaylTrack)))
+            
     
     counter = 0 
     limit = 50
     usrPlaylTrackInfo = []
     
+    #  ----- Asks for info for each track and parses relevant data ------
+  
     while counter < len(usrPlaylTrack):            
         if counter + limit >= len(usrPlaylTrack):
             limit = len(usrPlaylTrack) - counter
@@ -91,6 +114,9 @@ def get_tracks_in_playlists(auth_header, uid):
         usrPlaylTrackInfo += usrPlaylTrackParse
         
         counter += limit
+        
+    if PLAYLIST_DETAIL is True:
+        logging.info("tracks: Infos for all tracks received".format(len(usrPlaylTrack)))
             
     return usrPlaylTrackInfo
   
@@ -99,13 +125,11 @@ def parse_user_playlist_ids(playlists):
     """
     Parses all the Playlist IDs out of all the Playlists. Expects the object
     returned by spotify with a list of playlists. get's the val list associated
-    with the key 'items' returns a list. Some responses have an ID but are empty
-    otherwise. These playlists are tested for value at key 'local'. If True
-    they are not added to usrPlaylIDs
+    with the key 'items' returns a list. 
     """
     usrPlaylIDs = []
     for playlist in playlists:
-        if playlist.get('local') is not True:
+        if playlist.get('images'):
             usrPlaylIDs.append(playlist.get('id'))
         
     return usrPlaylIDs

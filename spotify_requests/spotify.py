@@ -323,6 +323,7 @@ def get_recommendations(auth_header, query):
 
 CREATE_PLAYLIST_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'users')
 GET_PLAYLIST_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'users')
+GET_CURRENT_USER_PLAYLIST_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'me')
 GET_PLAYLIST_TRACK_ENDPOINT = "{}/{}".format(SPOTIFY_API_URL, 'users')
 
 # https://developer.spotify.com/web-api/create-playlist/
@@ -340,6 +341,14 @@ def create_playlist(auth_header, uid, query):
 
 def get_list_of_users_playlists(auth_header, uid, l, o):
     url = "{}/{}/playlists?limit={}&offset={}".format(GET_PLAYLIST_ENDPOINT, uid, l, o)
+    resp = requests.get(url, headers=auth_header)
+    return resp.json()
+    
+# https://developer.spotify.com/web-api/get-a-list-of-current-users-playlists/
+##
+    
+def get_list_current_users_playlists(auth_header, l, o):
+    url = "{}/playlists?limit={}&offset={}".format(GET_CURRENT_USER_PLAYLIST_ENDPOINT, l, o)
     resp = requests.get(url, headers=auth_header)
     return resp.json()
     

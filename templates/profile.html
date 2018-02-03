@@ -70,6 +70,9 @@
 		<td>
 			  <a class="w3-button w3-circle w3-large w3-black" href="/profile/reject/{{ user['id'] }}/{{ i.friendlist }}"><i class="fa fa-close"></i></a>			
 		</td>
+		<td>
+			  <a class="w3-button w3-circle w3-large w3-black" href="/profile/friendlist/{{ user['id'] }}/{{ i.friendlist }}"><i class="fa fa-music"></i></a>			
+		</td>
 	</tr>
 
 	{% endfor %}
@@ -98,6 +101,9 @@
 		<td>
 			  <a class="w3-button w3-circle w3-large w3-black" href="/profile/reject/{{ user['id'] }}/{{ i.friendlist }}"><i class="fa fa-close"></i></a>			
 		</td>
+		<td>
+			  <a class="w3-button w3-circle w3-large w3-black" href="/profile/friendlist/{{ user['id'] }}/{{ i.friendlist }}"><i class="fa fa-music"></i></a>			
+		</td>
 	</tr>
 
 	{% endfor %}
@@ -123,6 +129,9 @@
 		<td> 
 		      <a class="w3-button w3-circle w3-large w3-black" href= {{ url_for('play_friendlist') }}><i class="fa fa-play"></i></a>	
 
+		</td>
+		<td>
+			  <a class="w3-button w3-circle w3-large w3-black" href="/profile/friendlist/{{ user['id'] }}/{{ i.friendlist }}"><i class="fa fa-music"></i></a>			
 		</td>
 		<td>
 			  <!-- <a class="w3-button w3-circle w3-large w3-black"><i class="fa fa-clock-o"></i></a> -->	

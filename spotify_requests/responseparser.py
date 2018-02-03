@@ -11,7 +11,8 @@ logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(message)s"
     )
 
-
+# Call from app.py callback deleted
+# New call to databases.buildUsrData
 def parse_users_profile(pdata):
     """expects the user data returned from spotify. Returns a dict with relevant user data and an str with the uid
     """
@@ -69,16 +70,13 @@ def merge_several_tracks_artists(track_list, artist_list, top_track_list):
 
     merged = []
 
-    if len(track_list) == len(artist_list):
-        for i in range(0, len(artist_list)):
-            condensed_track_list = {}
-            condensed_track_list.update(top_track_list[i])
-            condensed_track_list.update({'danceability': track_list[i].get('danceability'), 'energy': track_list[i].get('energy'),'loudness': track_list[i].get('loudness'),'speechiness': track_list[i].get('speechiness'),'acousticness': track_list[i].get('acousticness'),'instrumentalness': track_list[i].get('instrumentalness'), 'liveness': track_list[i].get('liveness'), 'valence': track_list[i].get('valence'), 'tempo': track_list[i].get('tempo')})
-            condensed_track_list.update(artist_list[i])
-            merged.append(condensed_track_list)
-    else:
-        merged = [] # inconsistent cases return an empty database
-        
+    for i in range(0, len(top_track_list)):
+        condensed_track_list = {}
+        condensed_track_list.update(top_track_list[i])
+        #condensed_track_list.update({'danceability': track_list[i].get('danceability'), 'energy': track_list[i].get('energy'),'loudness': track_list[i].get('loudness'),'speechiness': track_list[i].get('speechiness'),'acousticness': track_list[i].get('acousticness'),'instrumentalness': track_list[i].get('instrumentalness'), 'liveness': track_list[i].get('liveness'), 'valence': track_list[i].get('valence'), 'tempo': track_list[i].get('tempo')})
+        #condensed_track_list.update(artist_list[i])
+        merged.append(condensed_track_list)
+
     return merged
     
     
@@ -132,21 +130,24 @@ def format_uid_entry(uid, profile_dict, tracks_n_artists):
     return database
     
     
-def get_user_data(auth_header, profile_data):
-    """Does the heavy lifting. Expects the auth header, the friend list name, description. Calls all requests and parsers
+def get_user_data(auth_header, profile_data, top_track_dict):
+    """Slowly deprecating here. 
+    Does the heavy lifting. Expects the auth header, the friend list name, description. Calls all requests and parsers
     """
     profile_dict, uid = parse_users_profile(profile_data) # returns dict with display name etc.
     logging.info("Profile data retrieved for {}".format(uid))
 
-    user_top_tracks = spotify.get_users_top(auth_header, "tracks", 50) # get user's top tracks.
-    top_track_dict = parse_users_top(user_top_tracks)
-    logging.info("{} Top tracks retrieved and parsed".format(len(user_top_tracks)))
+    #user_top_tracks = spotify.get_users_top(auth_header, "tracks", 50) # get user's top tracks.
+    #top_track_dict = parse_users_top(user_top_tracks)
+    #logging.info("{} Top tracks retrieved and parsed".format(len(user_top_tracks)))
+
+    several_track_features = {}    
+    #several_track_features = spotify.get_several_track_features(auth_header, build_track_list(top_track_dict)) 
+    #logging.info("{} tracks' features returned from spotify".format(len(several_track_features)))
     
-    several_track_features = spotify.get_several_track_features(auth_header, build_track_list(top_track_dict)) 
-    logging.info("{} tracks' features returned from spotify".format(len(several_track_features)))
-    
-    track_artist_features = get_artist_list_slow(auth_header, top_track_dict)
-    logging.info("Track artist features retrieved")
+    track_artist_features = []
+    #track_artist_features = get_artist_list_slow(auth_header, top_track_dict)
+    #logging.info("Track artist features retrieved")
     
     merged_tracklist = merge_several_tracks_artists(several_track_features.get('audio_features'), track_artist_features, top_track_dict)
     database = format_uid_entry(uid, profile_dict, merged_tracklist)
@@ -213,12 +214,12 @@ def update_main_user_db(database_current_user):
     uid = next(iter(database_current_user[0]))
     
     database_current_user[0][uid]['genres'] = {}
-    database_current_user[0][uid]['genres'] = (genreparser.count_genres(database_current_user[0]))
+    #database_current_user[0][uid]['genres'] = (genreparser.count_genres(database_current_user[0]))
     
     #takes the genres count, compares it to the genre_db and finds the x best supergenres
     #returns a list with the key 'supergenres'
     database_current_user[0][uid]['supergenres'] = {}
-    database_current_user[0][uid]['supergenres'] = genreparser.find_genre_weight(database_current_user[0], 3)
+    #database_current_user[0][uid]['supergenres'] = genreparser.find_genre_weight(database_current_user[0], 3)
      
     #Remains false, when key not found due to empty database or new user    
     for i in database_user_before:
@@ -291,7 +292,7 @@ def parse_user_list_dashboard(user_database):
     user_list = []
     
     for i in user_database:
-        user_list.append("Name: {}, last login: {}".format(i.get(next(iter(i))).get('cumulated_name'), i.get(next(iter(i))).get('login')))
+        user_list.append("Name: {}, last login: {}, tracks: {}".format(i.get(next(iter(i))).get('cumulated_name'), i.get(next(iter(i))).get('login'), len(i.get(next(iter(i))).get('tracks'))))
 
     
     return user_list
