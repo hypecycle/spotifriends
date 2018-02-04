@@ -12,7 +12,7 @@ logging.basicConfig(
     )
 
 # True to get a detailed log
-PLAYLIST_DETAIL = True
+PLAYLIST_DETAIL = False
 
 def get_top_tracks(auth_header):
     """Pulls the list of the top 50 songs from spotify. The call is limited to 50 items.
@@ -63,30 +63,47 @@ def get_tracks_in_playlists(auth_header, uid):
         usrPlayl += spotify.get_list_of_users_playlists(auth_header, uid, limit, offset).get('items')
         offset += limit
                
-    usrPlaylIDs = parse_user_playlist_ids(usrPlayl)
+    usrPlaylInfo = parse_user_playlist_ids(usrPlayl)
+
+    #1/0
+
     usrPlaylTrack =[]
     usrPlaylTrackFAILED = []
 
     if PLAYLIST_DETAIL is True:
         logging.info("tracks: {} playlists returned".format(playlTotal))
-        logging.info("tracks: playlist id's: {} ".format(usrPlaylIDs))
+        logging.info("tracks: playlist id's: {} ".format(usrPlaylInfo))
 
     
     #  ----- Takes the list of IDs, loops over it and asks for tracks in each list ------
+    # ID[0] = Playlist ID, ID[1] = Nr of Tracks
     
-    for ID in usrPlaylIDs:
-        trackList = spotify.get_playlist_tracks(auth_header, uid, ID).get('items')
-        if trackList:
-            for i in range(len(trackList)):
-                trackID = trackList[i].get('track').get('id')
-                if trackID:
-                    usrPlaylTrack.append(trackID)
-                else:
-                    usrPlaylTrackFAILED.append(ID)
+    for ID in usrPlaylInfo:
 
-            if PLAYLIST_DETAIL is True:
-                logging.info("tracks: {} tracks for playlist {} returned"
-                             .format(len(trackList), ID))
+        limit = 100
+        offset = 0
+
+        while offset < ID[1]:
+
+            chunk = ID[1] - offset
+            if chunk > limit:
+                chunk = limit
+
+            trackList = spotify.get_playlist_tracks(auth_header, uid, ID[0], chunk, offset).get('items')
+
+            if trackList:
+                for i in range(len(trackList)):
+                    trackID = trackList[i].get('track').get('id')
+                    if trackID:
+                        usrPlaylTrack.append(trackID)
+                    else:
+                        usrPlaylTrackFAILED.append(ID[0])
+
+                if PLAYLIST_DETAIL is True:
+                    logging.info("tracks: {} tracks for playlist {} returned"
+                                 .format(len(trackList), ID))
+
+            offset += chunk
 
     if PLAYLIST_DETAIL is True:
         logging.info("tracks: {} tracks received as ID".format(len(usrPlaylTrack)))
@@ -124,15 +141,19 @@ def get_tracks_in_playlists(auth_header, uid):
 def parse_user_playlist_ids(playlists):
     """
     Parses all the Playlist IDs out of all the Playlists. Expects the object
-    returned by spotify with a list of playlists. get's the val list associated
-    with the key 'items' returns a list. 
+    returned by spotify with a list of playlists. Builds a list item in the 
+    format of [['id', nr. of entries][…]]
+    If playlist image link is in the response, the playlist is callable
     """
-    usrPlaylIDs = []
+    usrPlaylInfo = []
     for playlist in playlists:
         if playlist.get('images'):
-            usrPlaylIDs.append(playlist.get('id'))
+            usrPlaylTemp = []
+            usrPlaylTemp.append(playlist.get('id'))
+            usrPlaylTemp.append(playlist.get('tracks').get('total'))
+            usrPlaylInfo.append(usrPlaylTemp)
         
-    return usrPlaylIDs
+    return usrPlaylInfo
     
 
 def parse_user_top(tracklist):

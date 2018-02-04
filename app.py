@@ -37,7 +37,7 @@ base_url = "{}:{}".format(url, port)
 # If set to True, the trackloading routine will only be entered if …
 # the user is new (not in the user database) or
 # the user's last loging is 24 hours or longer ago
-LAZY_TRACKLOADING = True
+LAZY_TRACKLOADING = False
 
 
 
